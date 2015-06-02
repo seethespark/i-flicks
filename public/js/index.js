@@ -228,7 +228,11 @@ window.iflicks = (function iflicks() {
                 "height": vidDims.videoHeight
             };
             vjs = videojs(document.getElementById('video'), opts, function () { });
-            vjs.one('play', function () { $.ajax({ url: 'playVideo/' + vid, type: 'POST'}); });
+            vjs.one('play', function () { window.fetch('playVideo/' + vid, { credentials: 'include', type: 'POST' })
+                .then(function (response) {
+                    return response.json();
+                });
+            });
             vjs.on('volumechange', function (ev) { user.options.volume = ev.target.volume; setOption('volume', ev.target.volume); });
 
             if (user.options && user.options.volume) {
@@ -251,7 +255,6 @@ window.iflicks = (function iflicks() {
             videoText.appendChild(vidDetailElement);
 
             if (user.id !== undefined && (vidDetaill.userId === user.id || user.isSysAdmin === true)) {
-                console.log(user);
                 videoText.appendChild(btnEdit());
             }
             videoContainer.appendChild(videoText);
