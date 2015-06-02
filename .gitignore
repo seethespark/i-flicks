@@ -1,0 +1,8 @@
+node_modules/**
+uploads/**
+doc/**
+iflicksdb
+errorsdb
+usersdb
+sessiondb
+npm-debug.log

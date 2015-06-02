@@ -1,0 +1,44 @@
+<div id="headerBar">
+<div id="logo">
+	<img id="logoImage" src="img/logo.png">
+	<span id="logoText">I-FLICKS</span>
+</div>
+<span id="message"></span>
+<span id="headerBarUserName"></span>
+<span id="loggedinContainer">
+	<input type="button" id="submitLogout" value="Logout" class="button">
+	<input type="button" id="showUploadContainer" value="Upload" class="button">
+	<input type="button" id="showUnencodedVideoList" value="Unencoded" class="button">
+</span>
+<span id="loginContainer">
+	<span id="loginTextInputs">
+		<label for="fileName">Username: </label><input type="text" id="username" name="username">
+		<label for="fileName">Password: </label><input type="text" id="password" class="">
+	</span>
+	<input type="button" id="submitLogin" value="Logon" class="button">
+</span>
+<input type="button" id="showVideoList" value="List videos." class="button">
+</div>
+<div id="uploadContainer">
+	<label for="fileName">Name:</label><input type="text" id="fileName" name="name" class="uploadContainer">
+	<br>
+	<label for="fileDescription">Description:</label><input type="text" id="fileDescription" name="description"  class="uploadContainer">
+	<br>
+	<label for="emailWhenEncoded">Email when complete:</label><input type="checkbox" id="emailWhenEncoded" name="emailComplete" class="uploadContainer">
+	<br>
+	<label for="videoFile">File to upload
+		<div id="uploadContainerFile">Select file
+		   <input type="file" name="video"  id="videoFile" />
+		</div>
+	</label>
+
+	<!--<input type="file" name="video" id="videoFile" class=""> -->
+	<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
+	<video id="thumbVid" src="" class="hide" width="70" height="40" controls>
+	</video>
+	<br>
+	<input type="button" id="submitUploadNewVideo" value="Send" class="button">
+</div>
+<div id="videoList"></div>
+<div id="videoListUnencoded"></div>
+<div id="videoContainer"></div>

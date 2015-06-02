@@ -1,0 +1,307 @@
+body {
+  	padding: 0px;
+
+  	margin: 0px;
+  	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  	background-color: black;
+	color: rgb(252, 232, 50);
+}
+
+a {
+  color: #00B7FF;
+}
+.hide {
+	display: none;
+}
+
+#headerBar {
+	width: 100% - 30px;
+	height: 60px;
+	background: rgb(125,126,125); /* Old browsers */
+	background: -moz-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%, rgba(14,14,14,1) 100%); /* FF3.6+ */
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(125,126,125,1)), color-stop(100%,rgba(14,14,14,1))); /* Chrome,Safari4+ */
+	background: -webkit-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* Opera 12+ */
+	background: -ms-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* IE10+ */
+	background: radial-gradient(ellipse at center, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#7d7e7d', endColorstr='#0e0e0e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+	text-align: right;
+	padding: 15px;
+}
+
+.tableHead {
+	font-weight: bold;
+}
+#logo {
+	display: inline-block;
+	position: absolute;
+	left: 10px;
+}
+#logoImage {
+	width: 80px;
+	height: 60px;
+}
+#logoText {
+	font-family: "Arial Black", Gadget, sans-serif;
+	font-size: 30px;
+	position: relative;
+	top: -20px;
+}
+#videoContainer {
+	/*width:80%;*/
+	max-width:880px;
+	margin-left: auto;
+    margin-right: auto;
+}
+#videoInfo {
+	padding: 10px;
+}
+.vidContainer {
+	border: thin rgb(252, 232, 50) solid;
+	width: 250px;
+	display: inline-block;
+	text-align: center;
+	padding: 0;
+	position: relative;
+}
+.vidContent {
+	border: thin rgb(252, 232, 50) solid;
+	width: 100%;
+	display: inline-block;
+	text-align: center;
+	opacity: 1;
+	background-color: black;
+	transition: opacity, 0.3s;
+	/*transition-property: opacity, z-index;
+    transition-duration: 0.3s, 0.3s;*/
+   /* transition-timing-function: linear, linear;*/
+}
+.vidContent:hover {
+	opacity: 0.25;
+}
+.vidThumb {
+	border: thin grey solid;
+	max-width: 100%;
+	max-height: 185px;
+}
+.vidName {
+	display: inline-block;
+	border: thin grey solid;
+	color: rgb(252, 232, 50);
+	width: 230px;
+}
+.vidDelete {
+	display: inline-block;
+	font-weight: bold;
+	float: right;
+	border: medium white groove;
+	cursor: pointer;
+	cursor: hand;
+	width: 10px;
+}
+.vidDescription {
+	z-index: -10;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	padding: 5px;
+	text-align: left;
+}
+#loggedinContainer {
+	display: none;
+}
+#uploadContainer{
+	display: none;
+}
+#uploadContainer input[type="text"] {
+	position: absolute;
+	left: 300px;
+	height: 10px;
+}
+#uploadContainer input[type="checkbox"] {
+	position: absolute;
+	left: 300px;
+}
+#uploadContainer input[type="file"] {
+	position: absolute;
+	left: 300px;
+}
+#uploadContainer canvas {
+	position: absolute;
+	left: 550px;
+}
+#uploadContainerFile {
+	display: inline-block;
+	position: absolute;
+	left: 300px;
+	border: dashed 1px white;
+	background-color: grey;
+	overflow: hidden;
+	width: 80px;
+	height: 15px;
+	text-align: center;
+	font-weight: bold;
+}
+
+#uploadContainerFile input[type="file"] {
+	margin: 0;
+	padding: 0;
+	opacity: 0;
+	position: absolute; 
+	right: 0;
+	font-size: 100px; 
+}
+.editable {
+	background-color: rgb(68, 68, 71);
+}
+
+input[type="button"] {
+	background-attachment: scroll;
+	background-clip: border-box;
+	background-color: rgb(238, 238, 238);
+	background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, 0.2) 0px, rgba(0, 0, 0, 0.2) 100%);
+	background: -moz-linear-gradient(center top , rgba(255, 255, 255, 0.2) 0px, rgba(0, 0, 0, 0.2) 100%) repeat scroll 0% 0% #EEE;
+	background: -ms-linear-gradient(top,rgba(255,255,255,.2) 0,rgba(0,0,0,.2) 100%) #EEE;
+	background-origin: padding-box;
+	background-size: auto;
+	border-bottom-color: rgb(170, 170, 170);
+	border-bottom-left-radius: 3px;
+	border-bottom-right-radius: 3px;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	border-image-outset: 0px;
+	border-image-repeat: stretch;
+	border-image-slice: 100%;
+	border-image-source: none;
+	border-image-width: 1;
+	border-left-color: rgb(204, 204, 204);
+	border-left-style: solid;
+	border-left-width: 1px;
+	border-right-color: rgb(170, 170, 170);
+	border-right-style: solid;
+	border-right-width: 1px;
+	border-top-color: rgb(204, 204, 204);
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+	border-top-style: solid;
+	border-top-width: 1px;
+	color: rgb(68, 68, 68);
+	cursor: pointer;
+	display: inline-block;
+	font-size: 11px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: bold;
+	height: 30px;
+	letter-spacing: normal;
+	line-height: normal;
+	margin-bottom: 20px;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-top: 0px;
+	padding-bottom: 8px;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 8px;
+	text-align: center;
+	text-decoration: none;
+	text-indent: 0px;
+	text-rendering: auto;
+	text-shadow: rgba(255, 255, 255, 0.74902) 0px 1px 0px;
+	text-transform: none;
+	/*width: 60px;*/
+	/*word-spacing: 0px;*/
+}
+.vjs-fullscreen {padding-top: 0px}
+
+/* Mobile Portrait Size to Mobile Landscape Size (devices and browsers) */
+/*@media only screen and (max-width: 479px) {*/
+@media only screen and (max-width: 600px) {
+	#headerBar {
+		width: 100% - 10px;
+		text-align: center;
+		padding: 5px;
+	}
+	#headerBarUserName {
+		display: block;
+	}
+	#logo {
+		display: none;
+	}
+	#loginContainer input[type="text"] {
+		width: 60px;
+		height: 10px;
+	}
+	#loginContainer input[type="button"] {
+		margin: 2px;
+	}
+	#loginTextInputs {
+		display: block;
+	}
+	.vidContainer {
+		margin: 0;
+		width: 49%;
+		height: 230%;
+	}
+	.vidContent {
+
+	}
+	.vidName {
+		width: 45% - 10px;
+	}
+	.button {
+		font-size: 18px;
+	}
+}
+@media only screen and (max-width: 900px) {
+	#videoContainer {
+		/*width:80%;*/
+		max-width:500px;
+	}
+	#video {
+		max-width:500px;
+	}
+}
+
+
+/* Logo fade as the screen narrows... */
+@media only screen and (max-width: 760px) {
+	#logo {
+		opacity: 0.8;
+	}
+}
+@media only screen and (max-width: 740px) {
+	#logo {
+		opacity: 0.7;
+	}
+}
+@media only screen and (max-width: 720px) {
+	#logo {
+		opacity: 0.6;
+	}
+}
+@media only screen and (max-width: 700px) {
+	#logo {
+		opacity: 0.5;
+	}
+}
+@media only screen and (max-width: 680px) {
+	#logo {
+		opacity: 0.4;
+	}
+}
+@media only screen and (max-width: 660px) {
+	#logo {
+		opacity: 0.3;
+	}
+}
+@media only screen and (max-width: 640px) {
+	#logo {
+		opacity: 0.2;
+	}
+}
+@media only screen and (max-width: 620px) {
+	#logo {
+		opacity: 0.1;
+	}
+}

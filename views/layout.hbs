@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{title}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="css/video-js.css" rel="stylesheet">
+    <link href="css/index.css" rel="stylesheet">
+    <link href="{{css}}" rel="stylesheet">
+  </head>
+  <body id="body">
+    {{{body}}}
+
+    <script>
+    var vid = '{{vid}}';
+    </script>
+    <script src="js/modernizr.js"></script>
+    <script>
+    Modernizr.addTest('fetch', function() { return window.fetch; });
+    Modernizr.addTest('promise', function() { return window.Promise; });
+    Modernizr.load([{
+      test: Modernizr.fetch,
+      nope: 'fetch.js'
+      },
+      {test: Modernizr.promise,
+      nope: 'promise.js'},
+      {load: ['js/jquery-2.1.0.min.js', '/video.js', '{{{js}}}'],
+      complete: function () {
+          videojs.options.flash.swf = 'video-js.swf';
+          if (vid !== '') {
+            //document.addEventListener('DOMContentLoaded', function() {
+              iflicks.playVideo(vid);
+            //});
+          }
+        }
+      }
+    ]);
+    </script>
+  	<script>
+	   
+	  </script>
+
+  </body>
+</html>

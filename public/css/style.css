@@ -1,0 +1,38 @@
+body {
+  	padding: 50px;
+  	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  	background-color: black;
+	color: rgb(252, 232, 50);
+}
+
+a {
+  color: #00B7FF;
+}
+
+.vidDiv {
+	border: thin rgb(252, 232, 50) solid;
+	width: 250px;
+	display: inline-block;
+}
+.vidThumb {
+	border: thin grey solid;
+	max-width: 100%;
+}
+.vidName {
+	display: inline-block;
+	border: thin grey solid;
+	color: rgb(252, 232, 50);
+	width: 230px;
+}
+.vidDelete {
+	display: inline-block;
+	font-weight: bold;
+	float: right;
+	border: medium white groove;
+	cursor: pointer;
+	cursor: hand;
+	width: 10px;
+}
+#uploadContainer{
+	display: none;
+}
