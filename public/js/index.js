@@ -8,11 +8,11 @@ window.iflicks = (function iflicks() {
     function walkTheDom(node, f){
         f(node);
         node = node.firstChild;
-            while(node)
-            {
-                walkTheDom(node, f);
-                node = node.nextSibling;
-            }
+        while (node)
+        {
+            walkTheDom(node, f);
+            node = node.nextSibling;
+        }
     }
 
 
@@ -130,7 +130,7 @@ window.iflicks = (function iflicks() {
             imageData = new window.FormData(),
             elList = [], i;
         imageData.append(imgFileElement.name, imgFileElement.files[0]);
-        walkTheDom(uploadContainer, function(node) {
+        walkTheDom(uploadContainer, function (node) {
             if (node.className && node.className.indexOf('uploadContainer') > -1) {
                 elList.push(node);
             }
@@ -228,11 +228,18 @@ window.iflicks = (function iflicks() {
                 "height": vidDims.videoHeight
             };
             vjs = videojs(document.getElementById('video'), opts, function () { });
-            vjs.one('play', function () { window.fetch('playVideo/' + vid, { credentials: 'include', type: 'POST' })
+            vjs.one('play', function () { window.fetch('playVideo/' + vid, { 
+                credentials: 'include',
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
                 .then(function (response) {
                     return response.json();
                 });
-            });
+                });
             vjs.on('volumechange', function (ev) { user.options.volume = ev.target.volume; setOption('volume', ev.target.volume); });
 
             if (user.options && user.options.volume) {
@@ -271,11 +278,12 @@ window.iflicks = (function iflicks() {
             setVideoDetail(vidDetail);
         } else {
             window.fetch('videodetail/' + vid, {
-                    credentials: 'include', 
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    } })
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
                 .then(function (response) {
                     return response.json();
                 })
@@ -639,11 +647,14 @@ window.iflicks = (function iflicks() {
             })
         })
             .then(function (response) {
-                if (response.status === 401) { return {}; }
+                //if (response.status === 401) { return {}; }
                 return response.json();
             })
             .then(function (json) {
-                if (Object.getOwnPropertyNames(json).length > 0) {
+                if (json.error) {
+                    showMessage(json.error, 6);
+                } else {
+                    //(Object.getOwnPropertyNames(json).length > 0) {
                     user = json;
                     postLogin();
                 }

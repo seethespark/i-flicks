@@ -1,7 +1,7 @@
 {
   "name": "i-flicks",
   "description": "Video sharing website and application",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": false,
   "scripts": {
     "start": "nodemon ./bin/www"
@@ -20,6 +20,7 @@
     "fluent-ffmpeg": "^2.0.1",
     "gm": "^1.17.0",
     "hbs": "~2.9.0",
+    "marked": "^0.3.3",
     "mkdirp": "^0.5.0",
     "morgan": "~1.5.1",
     "multer": "^0.1.8",
@@ -48,5 +49,10 @@
   },
   "publishConfig": {
     "registry": "http://192.168.0.26:4873/"
+  },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/seethespark/i-flicks.git"
   }
+
 }

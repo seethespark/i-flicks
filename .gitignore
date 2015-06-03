@@ -1,4 +1,5 @@
-.hg
+.hg/**
+.hgignore
 node_modules/**
 uploads/**
 doc/**

@@ -3,6 +3,7 @@ var router = express.Router();
 var fs = require('fs');
 var path = require('path');
 var vidStreamer = require('vid-streamer');
+var marked = require('marked');
 var flick = require('../models/flick');
 var flicks = require('../models/flicks');
 var User = require('../models/user');
@@ -64,7 +65,7 @@ router.get('/video/:id/:fileName', function (req, res, next) {
 router.post('/playVideo/:id', function (req, res, next) {
     flick.play(req.params.id, function (err) {
         if (err) { err.code = 'F03007'; return next(err); }
-        res.status(200).send('');
+        res.status(200).send('{}');
     });
 });
 
@@ -160,7 +161,22 @@ router.get('/test', function (req, res, next) {
     });
 });
 
-
+router.get('/readme', function (req, res, next) {
+    fs.readFile(path.join(__dirname, '../README.md'), {encoding: 'utf-8'}, function (err, data) {
+        if (err) { return next(err); }
+       /* marked.setOptions({
+          renderer: new marked.Renderer(),
+          gfm: true,
+          tables: true,
+          breaks: true,
+          pedantic: false,
+          sanitize: true,
+          smartLists: true,
+          smartypants: true
+        */
+        res.render('readme', {layout: 'markdown', md: marked(data)});
+    });
+});
 
 /* GET home page. */
 router.get('/:vid', function (req, res, next) {

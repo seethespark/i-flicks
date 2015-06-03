@@ -8,7 +8,10 @@
 Overview
 --------
 
-i-Flickls pulls together several components to give a full, open source video sharing application.  
+This software is incomplete.  It works but still needs plenty of work.  
+i-flickls pulls together several components to give a full, open source video sharing application.  
+
+It is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  
 
 Getting started
 ---------------
@@ -25,15 +28,13 @@ Install Node.js, NPM ImageMagick, Git and FLVMeta.
 
 	curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -
 
-	apt-get install nodejs -y
+	sudo apt-get install nodejs -y
 
-	//apt-get install npm 
+	sudo apt-get install git -y
 
-	apt-get install git -y
+	sudo apt-get install graphicsmagick -y
 
-	apt-get install graphicsmagick -y
-
-	apt-get install flvmeta
+	sudo apt-get install flvmeta
 
 Install FFmpeg
 
@@ -49,19 +50,30 @@ Install FFmpeg
 **Windows**
 The default settings and latest installs of the following packages should all work.
 
-Download and install [Node.js](https://nodejs.org/)
-Download and install [Git](https://git-scm.com/downloads)
-Download and install [GraphicsMagick ](http://www.graphicsmagick.org/download.html)
-Download and install [FLVMeta](http://www.flvmeta.com/)
-Download and install [FFMpeg](https://www.ffmpeg.org/download.html)
+	Download and install [Node.js](https://nodejs.org/)
+
+	Download and install [Git](https://git-scm.com/downloads)
+
+	Download and install [GraphicsMagick ](http://www.graphicsmagick.org/download.html)
+
+	Download and install [FLVMeta](http://www.flvmeta.com/)
+
+	Download and install [FFMpeg](https://www.ffmpeg.org/download.html)
 
 **For all operating systems**
-Create a folder for your new project on your computer and move to that folder.
+Create a folder for your new project on your computer and move to that folder.  
 run: 
 
-	npm install i-flicks.
+~~npm install i-flicks~~ coming soon
+
+	git clone https://github.com/seethespark/i-flicks.git  
+	cd i-flicks  
+	npm install
+	cd views  
+	mv runOnce.done.hbs runOnce.hbs *OR* rename runOnce.done.hbs runOnce.hbs  
+	cd ..
 		
-Create a node application, create a "settings" object with paths to the software installed above and require i-flicks....
+Create a node application, create a "settings" object with paths to the software installed above and require i-flicks....  
 For example, add this to a file called app.js
 
 	var settings = {
@@ -72,26 +84,27 @@ For example, add this to a file called app.js
 	    uploadPath: '/var/uploads',
 	    mediaPath: '/var/uploads'
 	 };
-	var iflicks = require('i-flicks')(settings);
+	var iflicks = require('./i-flicks/app')(settings);
 	var http = require('http');
 	var server = http.createServer(iflicks);
 
 	server.listen(3000, function() {
 		var addr = this.address();
-		console.log('i-flicks server is listening on %s:%d', addr.address, addr.por$
+		console.log('i-flicks server is listening on %s:%d', addr.address, addr.port);
 	});
 
 
 
-run: node app.js
+run:  
+node app.js
 
 Open a browser and navigate to http://localhost:3000
 
-**How to listen on port 80**
+**How to listen on port 80**  
 Node.js requires elevated privileges or root access to listen on port 80 or 443.  It isn't a good idea to do this and so something needs to forward requests to port 80 onto the Node.js port.  IPTables or Nginx both work. 
 IPTables is quicker to setup as it is installed on most Linux distrubutions.  Nginx works on Windows and Linux and adds a bit more flexibility.
 
-**What about HTTPS, SPDY or HTTP2**
+**What about HTTPS, SPDY or HTTP2**  
 i-flicks works with other HTTP modules.  None have been production tested but all work when tested as a Friday afternoon bit of fun.
 
 Settings
@@ -109,3 +122,6 @@ mediaPath	| "/"	| Where to store encoded media files
 statsDServer | undefined	| If you have a StatsD server then i-flicks can log various metrics to it.
 cssPath | undefined	| Absolute path to a file used to override the default stylesheet.
 
+More
+--------
+If you use i-flicks or would like to see a specific feature please drop contact@seethespark.com an email.  We would love to hear what you are doing.
