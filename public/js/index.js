@@ -1,43 +1,81 @@
 /** This is the master i-flicks object which controls uploads, playing and editing videos
  */
-window.iflicks = (function iflicks() {
+window.iflicks = (function iflicks(settings) {
     'use strict';
-    var intervalCheckEncoded, newVideoEvents, vjs, user = {}, videoListMaster = [], messages = [];
+    var vidTimeTicks = 0, intervalCheckEncoded, newVideoEvents, vjs, newVideoCount, previousDisplayedPage,
+        currentVideoDetail, currentOrientation, user = {}, videoListMaster = [], messages = [], loadingImage = new Image();
+    settings.videoListPageLength = settings.videoListPageLength || 10;
+    loadingImage.src = 'img/loading.gif';
+    currentOrientation = window.orientation;
+
     user.options = {};
 
-    function walkTheDom(node, f){
+    function walkTheDom(node, f) {
         f(node);
         node = node.firstChild;
-        while (node)
-        {
+        while (node) {
             walkTheDom(node, f);
             node = node.nextSibling;
         }
     }
 
+    function addListener(element, eventType, track, callback) {
+        if (typeof element === 'string') {
+            element = document.getElementById(element);
+        }
+        if (element === null) { return; }
+        if (element.addEventListener) {
+            element.addEventListener(eventType, callback);
+        } else if (element.attachEvent) {
+            element.attachEvent('on' + eventType, callback);
+        }
+        if (track) {
+            var elementType = element.type || 'button';
+            addListener(element, eventType, false, function () {
+                ga('send', 'event', elementType, eventType, 'nav-buttons');
+            });
+        }
+    }
 
     /** Attempt to detect touch devices. This isn't 100% accurate but helps improve the experience. **/
     function isTouchDevice() {
         return ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0);
     }
 
-    function showMessage(message, timeout) {
+    /** Send errors to the server */
+    function sendError(message, location) {
+        var error = {message: message, location: location};
+        window.fetch('error', {
+            credentials: 'include',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(error)
+        })
+            .catch(function (ex) {
+                console.log(ex);
+            });
+    }
+
+    function showMessage(message, location, timeout) {
+        var i, origTimeout, minTimeout = 90000000000000, frag, messageElement, messageElements, msg, br, err = {}; // minTimeout is an epoch date in 4821
+        origTimeout = timeout;
         if (timeout === undefined) {
             timeout = 10;
         }
-        if (message !== undefined) {
-            console.log((new Date()).toUTCString() + ' :: ' + message);
+        if (typeof message === 'object' && message.message !== undefined) { /// an error object was passed in.
+            message = message.message;
         }
-        var minTimeout = 90000000000000, frag, messageElement, msg, br, err = {}; // minTimeout is an epoch date in 4821
+        if (message !== undefined) {
+            console.log((new Date()).toUTCString() + ' :: ' + location + ' :: ' + message);
+        }
         if (message) {
             timeout = Date.now() + (timeout * 1000);
             err.message = message;
             err.timeout = timeout;
             messages.push(err);
-        }
-        messageElement = document.getElementById('message');
-        while (messageElement.hasChildNodes()) {
-            messageElement.removeChild(messageElement.firstChild);
         }
         frag = document.createDocumentFragment();
         messages.forEach(function (err, i) {
@@ -51,15 +89,59 @@ window.iflicks = (function iflicks() {
                 if (err.timeout < minTimeout) { minTimeout = err.timeout; }
             }
         });
+        messageElements = document.getElementsByClassName('message');
+        for (i = 0; i < messageElements.length; i++) {
+            messageElement = messageElements.item(i);
+            while (messageElement.hasChildNodes()) {
+                messageElement.removeChild(messageElement.firstChild);
+            }
+            messageElement.appendChild(frag.cloneNode(true));
+        }
+       /* messageElement = document.getElementById('message');
+        while (messageElement.hasChildNodes()) {
+            messageElement.removeChild(messageElement.firstChild);
+        }
+        
         messageElement.appendChild(frag);
-
+*/
         if (minTimeout < 90000000000000) {
             timeout = minTimeout - Date.now();
             setTimeout(function () { showMessage(); }, timeout);
         }
+        // Hacky convention, even numbers get sent to the server, odd ones don't.
+        if (message !== undefined && origTimeout % 2 === 0) {
+            sendError(message, location);
+        }
     }
 
-    //function getCookie(k) { return (document.cookie.match('(^|; )' + k + '=([^;]*)') || 0)[2]; }
+    function getCookie(k) { return (document.cookie.match('(^|; )' + k + '=([^;]*)') || 0)[2]; }
+    function setCookie(n, v, d) {
+        var e, dd;
+        if (d) {
+            dd = new Date();
+            dd.setTime(dd.getTime() + (d * 24 * 60 * 60 * 1000));
+            e = '; expires=' + dd.toGMTString();
+        } else { e = ""; }
+        document.cookie = n + "=" + v + e + "; path=/";
+    }
+
+    function show(el) {
+        el.classList.remove('hide');
+    }
+    function hide(el) {
+        el.classList.add('hide');
+    }
+
+        /// Show the upload form
+    function showHideElement(elementName) {
+        var el = document.getElementById(elementName);
+        if (el.className.indexOf('hide') > -1) {
+            el.classList.remove('hide');
+        } else {
+            el.classList.add('hide1');
+            setTimeout(function () { el.classList.remove('hide1'); el.classList.add('hide'); }, 300);
+        }
+    }
 
     function setOption(option, value) {
         var o = {};
@@ -74,61 +156,97 @@ window.iflicks = (function iflicks() {
             body: JSON.stringify(o)
         })
             .catch(function (ex) {
-                showMessage(ex, 6);
+                showMessage(ex, 'setOption', 6);
+            });
+    }
+
+    function timeUpdate(video, time) {
+        vidTimeTicks++;
+        if (user.id === undefined || vidTimeTicks % 10 !== 0) {
+            return;
+        }
+        if (time > video.fileDetail.duration - 5) {
+            time = 0;
+        }
+        window.fetch('timeupdate/' + video._id + '/' + time, {
+            credentials: 'include',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+            .catch(function (ex) {
+                showMessage(ex, 'timeUpdate', 6);
             });
     }
 
     function getViewerDimensions(sourceWidth, sourceHeight) {
-        var w, h, dims = {}, widthHeightRatio;
+        var w, h, tmp, dims = {}, widthHeightRatio;
         widthHeightRatio = sourceWidth / sourceHeight;
-        w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        w = Math.max(document.documentElement.clientWidth/*, window.innerWidth*/ || 0);
+        h = Math.max(document.documentElement.clientHeight/*, window.innerHeight*/ || 0);
+
+        //showMessage(window.innerWidth, 'window.resize', 3);
+        /*if (window.orientation === 90 || window.orientation === 270) {
+            tmp = h;
+            h = w;
+            w = tmp;
+        }*/
         dims.viewportWidth = w;
         dims.viewportHeight = h;
         if (h > w && w < 400) {
-            dims.videoWidth = w * 0.95;
+            //showMessage('a', 'dims', 3);
+            dims.videoWidth = w;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
             dims.src = 'small';
         } else if (h > w && w >= 400 && w < 500) {
+            //showMessage('b', 'dims', 3);
             dims.videoWidth = 400;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
-            dims.src = 'medium';
+            dims.src = 'small';
         } else if (h > w && w >= 500 && w < 800) {
+            //showMessage('c', 'dims', 3);
             dims.videoWidth = 500;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
             dims.src = 'medium';
         } else if (h > w && w >= 800) {
-            dims.videoWidth = 800;
+            //showMessage('d', 'dims', 3);
+            dims.videoWidth = 880;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
             dims.src = 'big';
         } else if (h <= w && w < 400) {
-            dims.videoWidth = w * 0.95;
+            //showMessage('e', 'dims', 3);
+            dims.videoWidth = w;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
             dims.src = 'small';
         } else if (h <= w && w >= 400 && w < 500) {
+            //showMessage('f', 'dims', 3);
             dims.videoWidth = 400;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
-            dims.src = 'medium';
+            dims.src = 'small';
         } else if (h <= w && w >= 500 && w < 900) {
+            //showMessage('g', 'dims', 3);
             dims.videoWidth = 500;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
             dims.src = 'medium';
         } else if (h <= w && w >= 900) {
+            //showMessage('h', 'dims', 3);
             dims.videoWidth = 880;
             dims.videoHeight = dims.videoWidth / widthHeightRatio;
             dims.src = 'big';
         } else {
             throw new Error('Unrecognised size');
         }
-        console.log(dims);
         return dims;
     }
     /** handler for the upload file. */
-    function uploadFile(ev) {
+    function uploadFile() {
         var imgFileElement = document.getElementById('videoFile'),
             uploadContainer = document.getElementById('uploadContainer'),
-            imageData = new window.FormData(),
-            elList = [], i;
+            i,
+            elList = [],
+            imageData = new window.FormData();
         imageData.append(imgFileElement.name, imgFileElement.files[0]);
         walkTheDom(uploadContainer, function (node) {
             if (node.className && node.className.indexOf('uploadContainer') > -1) {
@@ -144,36 +262,50 @@ window.iflicks = (function iflicks() {
             body: imageData
         })
             .then(function (res) { return res.text(); })
-            .then(function (txt) { showMessage(txt, 6); })
-            .catch(function (ex) { showMessage(ex, 10); });
+            .then(function (txt) {
+                document.getElementById('uploadForm').reset();
+                showMessage(txt, 'uploadFile.msg', 5);
+            })
+            .catch(function (ex) { showMessage(ex, 'uploadFile', 10); });
     }
 
     /// Handler for the then videos are clicked
     function playVideo(vid) {
-        var opts, i, vidDetail, vidDims, vidDetailElement, videoText, videoContainer, editData;
-        $('#videoList').hide();
+        var opts, i, vidDims, vidDetailElement, videoText, videoContainer, editData,
+            vidPublicElement, vidPublicCheck, vidDirectLinkElement, vidDirectLinkCheck;
+        document.getElementById('videoList').classList.add('hide');
         videoContainer = document.getElementById('videoContainer');
 
         videoContainer.classList.remove('hide');
         clearInterval(intervalCheckEncoded);
 
-        function btnEditClick() {
-            var btn = this;
+        function btnEditClick(ev) {
+            var btn = ev.target;
             if (btn.value === 'Edit') {
                 document.getElementById('videoName').contentEditable = true;
-                document.getElementById('videoName').className = 'editable';
+                document.getElementById('videoName').classList.add('editable');
                 document.getElementById('videoDescription').contentEditable = true;
-                document.getElementById('videoDescription').className = 'editable';
+                document.getElementById('videoDescription').classList.add('editable');
+                document.getElementById('videoPublic').classList.add('editable');
+                show(document.getElementById('videoPublic'));
+                document.getElementById('videoDirectLink').classList.add('editable');
+                show(document.getElementById('videoDirectLink'));
                 btn.value = 'Save';
             } else {
                 document.getElementById('videoName').contentEditable = false;
-                document.getElementById('videoName').className = undefined;
+                document.getElementById('videoName').classList.remove('editable');
                 document.getElementById('videoDescription').contentEditable = false;
-                document.getElementById('videoDescription').className = undefined;
+                document.getElementById('videoDescription').classList.remove('editable');
+                document.getElementById('videoPublic').classList.remove('editable');
+                hide(document.getElementById('videoPublic'));
+                document.getElementById('videoDirectLink').classList.remove('editable');
+                hide(document.getElementById('videoDirectLink'));
                 editData = {
                     id: vid,
                     name: document.getElementById('videoName').textContent,
-                    description: document.getElementById('videoDescription').textContent
+                    description: document.getElementById('videoDescription').textContent,
+                    public: document.getElementById('videoPublicCheck').checked,
+                    directLink: document.getElementById('videoDirectLinkCheck').checked
                 };
                 btn.value = 'Edit';
                 window.fetch('editvideo', {
@@ -190,12 +322,12 @@ window.iflicks = (function iflicks() {
                     })
                     .then(function (json) {
                         if (json.All !== 'OK') {
-                            showMessage(json.error, 10);
+                            showMessage(json.error, 'playVideo.btnEditClick.save', 10);
                         }
                     })
                     .catch(function (ex) {
                         console.log('Error');
-                        showMessage(ex, 10);
+                        showMessage(ex, 'playVideo.btnEditClick.save.1', 10);
                     });
             }
         }
@@ -203,34 +335,36 @@ window.iflicks = (function iflicks() {
             var btn = document.createElement('input');
             btn.type = 'button';
             btn.value = 'Edit';
-            btn.addEventListener('click', btnEditClick);
+            addListener(btn, 'click', true, btnEditClick);
             return btn;
         }
 
-        function setVideoDetail(vidDetaill) {
-            if (vidDetaill.fileDetail && vidDetaill.fileDetail.width) {
-                vidDims = getViewerDimensions(vidDetaill.fileDetail.width, vidDetaill.fileDetail.height);
-            } else {
-                vidDims = getViewerDimensions(800, 600);
-            }
+        function btnShowCopy() {
+            var btn = document.createElement('input');
+            btn.type = 'button';
+            btn.value = 'Send';
+            btn.id = 'btnShowCopy';
+            addListener(btn, 'click', true, function (ev) {
+                if (ev.target.value === 'Send') {
+                    document.getElementById('copyFlickPanel').classList.remove('hide');
+                }
+            });
+            return btn;
+        }
 
-            videoContainer.innerHTML = '<video id="video" poster="thumb/' + vid + '" data-setup="{}"  class="video-js vjs-default-skin" >' +
-                    '<source src="video/' + vid + '/' + vidDims.src + '.mp4" type="video/mp4"></source>' +
-                    '<source src="video/' + vid + '/' + vidDims.src + '.webm" type="video/webm"></source>' +
-                    //'<source src="video/' + vid + '/' + vidDims.src + '.ogv" type="video/ogg"></source>' +
-                    '</video>' +
-                    '<div ></div>';
-            opts = {
-                "controls": true,
-                "autoplay": false,
-                "preload": "auto",
-                "width": vidDims.videoWidth,
-                "height": vidDims.videoHeight
-            };
-            vjs = videojs(document.getElementById('video'), opts, function () { });
-            vjs.one('play', function () { window.fetch('playVideo/' + vid, { 
-                credentials: 'include',
+        function copyFlickClick(ev) {
+            var body = {};
+            body.id = ev.target.id.split('_')[1];
+            walkTheDom(ev.target.parentNode, function (node) {
+                if (node.name && node.type === 'text') {
+                    body[node.name] = node.value;
+                }
+            });
+
+            window.fetch('copy', {
                 method: 'POST',
+                credentials: 'include',
+                body: JSON.stringify(body),
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -238,9 +372,143 @@ window.iflicks = (function iflicks() {
             })
                 .then(function (response) {
                     return response.json();
+                })
+                .then(function (json) {
+                    if (json.All !== 'OK') {
+                        showMessage(json.error, 'playVideo.copyFlickClick', 10);
+                    } else {
+                        showMessage('Received at destination', 'playVideo.copyFlickClick', 5);
+                        document.getElementById('copyFlickPanel').classList.add('hide');
+                    }
+                })
+                .catch(function (ex) {
+                    console.log('Error');
+                    showMessage(ex, 'playVideo.copyFlickClick.1', 10);
                 });
-                });
+        }
+        function copyFlick(vid) {
+            var form, btn, dest, uname, pwd;
+            btn = document.createElement('input');
+            btn.type = 'button';
+            btn.value = 'Send';
+            btn.id = 'copyFlick_' + vid;
+            addListener(btn, 'click', true, copyFlickClick);
+
+            dest = document.createElement('input');
+            dest.type = 'text';
+            dest.name = 'destination';
+            dest.placeholder = 'Destination server';
+
+            uname = document.createElement('input');
+            uname.type = 'text';
+            uname.name = 'username';
+            uname.placeholder = 'Destination username';
+
+            pwd = document.createElement('input');
+            pwd.type = 'text';
+            pwd.name = 'password';
+            pwd.placeholder = 'Destination password';
+
+            form = document.createElement('div');
+            form.className = 'hide';
+            form.id = 'copyFlickPanel';
+            form.appendChild(dest);
+            form.appendChild(uname);
+            form.appendChild(pwd);
+            form.appendChild(btn);
+
+            return form;
+        }
+
+        function rating(videoId, currentValue) {
+            var star, ratingPanel = document.createElement('div'),
+                container = document.createElement('div');
+            container.className = 'ratingContainer';
+            ratingPanel.className = 'rating';
+            for (i = 5; i > 0; i--) {
+                star = document.createElement('i');
+                if (currentValue >= i) {
+                    star.className = 'fa fa-star';
+                } else if (currentValue < i && currentValue > (i - 1)) {
+                    star.className = 'fa fa-star-half-o ';
+                } else {
+                    star.className = 'fa fa-star-o';
+                }
+                star.id = "rating_" + i;
+                ratingPanel.appendChild(star);
+            }
+            container.appendChild(ratingPanel);
+
+            addListener(container, 'click', true, function (ev) {
+                var newRating = ev.target.id.split('_')[1];
+                window.fetch('rating/' + videoId + '/' + newRating, {
+                    credentials: 'include',
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (json) {
+                        if (json.All !== 'OK') {
+                            showMessage(json.error, 'playVideo.rating.save', 7);
+                        }
+                        console.log(ev.target.parentNode);
+                        var tmpNode = ev.target.parentNode.parentNode.parentNode;
+                        tmpNode.removeChild(ev.target.parentNode.parentNode);
+                        tmpNode.appendChild(rating(videoId, newRating));
+                    })
+                    .catch(function (ex) {
+                        showMessage(ex, 'timeUpdate', 6);
+                    });
+            });
+
+            return container;
+        }
+
+        function setVideoDetail() {
+            if (currentVideoDetail.fileDetail && currentVideoDetail.fileDetail.width) {
+                vidDims = getViewerDimensions(currentVideoDetail.fileDetail.width, currentVideoDetail.fileDetail.height);
+            } else {
+                vidDims = getViewerDimensions(800, 600);
+            }
+
+            videoContainer.innerHTML = '<video id="video" poster="thumb/' + vid + '/' + vidDims.src + '" data-setup="{}"  class="video-js vjs-default-skin" >' +
+                    '<source src="video/' + vid + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() + '" type="video/mp4"></source>' +
+                    '<source src="video/' + vid + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() + '" type="video/webm"></source>' +
+                    '<source src="video/' + vid + '/' + vidDims.src + '.ogv?r=' + (new Date()).getTime() + '" type="video/ogg"></source>' +
+                    '</video>' +
+                    '<div ></div>';
+            opts = {
+                'controls': true,
+                'autoplay': false,
+                'preload': 'auto',
+                'width': vidDims.videoWidth,
+                'height': vidDims.videoHeight
+            };
+            vjs = videojs(document.getElementById('video'), opts, function () { });
+            if (currentVideoDetail.currentTime) {
+                vjs.currentTime(currentVideoDetail.currentTime);
+            }
+            vjs.on('error', function (err) { showMessage(err.message, 'playVideo.setVideoDetail.vjs.error', 10); });
+            vjs.one('play', function () {
+                window.fetch('playVideo/' + vid, {
+                    credentials: 'include',
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(function (response) {
+                        return response.json();
+                    });
+            });
             vjs.on('volumechange', function (ev) { user.options.volume = ev.target.volume; setOption('volume', ev.target.volume); });
+            vjs.on('timeupdate', function () { timeUpdate(currentVideoDetail, vjs.currentTime()); });
 
             if (user.options && user.options.volume) {
                 vjs.volume(user.options.volume);
@@ -250,32 +518,67 @@ window.iflicks = (function iflicks() {
             videoText.id = 'videoInfo';
             vidDetailElement = document.createElement('div');
             vidDetailElement.id = 'videoName';
-            vidDetailElement.textContent = vidDetaill.name;
+            vidDetailElement.className = 'videoTextItem';
+            vidDetailElement.textContent = currentVideoDetail.name;
             videoText.appendChild(vidDetailElement);
             vidDetailElement = document.createElement('div');
             vidDetailElement.id = 'videoDescription';
-            vidDetailElement.textContent = vidDetaill.description;
-            videoText.appendChild(vidDetailElement);
-            vidDetailElement = document.createElement('div');
-            vidDetailElement.id = 'videoRunCount';
-            vidDetailElement.textContent = 'Played ' + vidDetaill.playCount;
+            vidDetailElement.className = 'videoTextItem';
+            vidDetailElement.textContent = currentVideoDetail.description;
             videoText.appendChild(vidDetailElement);
 
-            if (user.id !== undefined && (vidDetaill.userId === user.id || user.isSysAdmin === true)) {
+            vidPublicElement = document.createElement('div');
+            vidPublicElement.id = 'videoPublic';
+            vidPublicElement.className = 'videoTextItem';
+            vidPublicElement.textContent = 'Public';
+            vidPublicCheck = document.createElement('input');
+            vidPublicCheck.id = 'videoPublicCheck';
+            vidPublicCheck.type = 'checkbox';
+            vidPublicCheck.name = 'public';
+            vidPublicCheck.checked = currentVideoDetail.public;
+            hide(vidPublicElement);
+            vidPublicElement.appendChild(vidPublicCheck);
+            videoText.appendChild(vidPublicElement);
+
+            vidDirectLinkElement = document.createElement('div');
+            vidDirectLinkElement.id = 'videoDirectLink';
+            vidDirectLinkElement.className = 'videoTextItem';
+            vidDirectLinkElement.textContent = 'Allow direct link';
+            vidDirectLinkCheck = document.createElement('input');
+            vidDirectLinkCheck.id = 'videoDirectLinkCheck';
+            vidDirectLinkCheck.type = 'checkbox';
+            vidDirectLinkCheck.name = 'directLink';
+            vidDirectLinkCheck.checked = currentVideoDetail.directLink;
+            hide(vidDirectLinkElement);
+            vidDirectLinkElement.appendChild(vidDirectLinkCheck);
+            videoText.appendChild(vidDirectLinkElement);
+
+            vidDetailElement = document.createElement('div');
+            vidDetailElement.id = 'videoRunCount';
+            vidDetailElement.className = 'videoTextItem';
+            vidDetailElement.textContent = 'Played ' + currentVideoDetail.playCount + ' time' + (currentVideoDetail.playCount === 1 ? '' : 's');
+            videoText.appendChild(vidDetailElement);
+
+            if (user.id !== undefined && (currentVideoDetail.userId === user.id || user.isSysAdmin === true)) {
                 videoText.appendChild(btnEdit());
+                videoText.appendChild(btnShowCopy());
+
             }
+            //console.log(currentVideoDetail);
+            videoText.appendChild(rating(vid, currentVideoDetail.rating));
+            videoText.appendChild(copyFlick(vid));
             videoContainer.appendChild(videoText);
         }
 
         for (i = 0; i < videoListMaster.length; i++) {
             if (videoListMaster[i]._id === vid) {
-                vidDetail = videoListMaster[i];
+                currentVideoDetail = videoListMaster[i];
                 break;
             }
         }
 
-        if (vidDetail) {
-            setVideoDetail(vidDetail);
+        if (currentVideoDetail) {
+            setVideoDetail();
         } else {
             window.fetch('videodetail/' + vid, {
                 credentials: 'include',
@@ -289,90 +592,150 @@ window.iflicks = (function iflicks() {
                 })
                 .then(function (json) {
                     if (json.error) {
-                        showMessage(json.error, 20);
+                        showMessage(json.error, 'playVideo.fetchVideoDetail', 10);
                     } else {
-                        setVideoDetail(json);
+                        currentVideoDetail = json;
+                        setVideoDetail();
                     }
                 })
                 .catch(function (ex) {
                     console.log('Error');
-                    showMessage(ex, 10);
+                    showMessage(ex.message, 'playVideo.fetchVideoDetail1', 10);
                 });
         }
     }
 
     /// Print the video list tothe browser.
-    function listVideosShow(list) {
-        var j, videoList, vidFrag, vidContent, vidName, vidNameText,  vidDelete, vidDeleteText;
+    function listVideosShow(vids) {
+        //console.log(list);
+        var j, list, videoList, vidFrag, vidContent, vidName, vidNameText,  vidDelete;
+        list = vids.data;
         videoList = document.getElementById('videoList');
         while (videoList.firstChild) {
             videoList.removeChild(videoList.firstChild);
         }
+        if (list === undefined) { return; }
         vidFrag = document.createDocumentFragment();
         list.forEach(function (vid, i) {
-            var vidContainer, vidThumb, vidDescription, vidDescriptionText;
+            var vidContainer, vidThumbContainer, vidThumb, vidLoadingThumb, vidFooter, vidDescription, pressTimer;
             vidContainer = document.createElement('div');
+            var vidContainerText = document.createTextNode(' ');
             vidContent = document.createElement('div');
+            vidLoadingThumb = document.createElement('i');
+            vidThumbContainer = document.createElement('div');
             vidThumb = document.createElement('img');
             vidName = document.createElement('span');
+            vidFooter = document.createElement('div');
             vidNameText = document.createTextNode(vid.name);
             vidDescription = document.createElement('span');
-            vidDescriptionText = document.createTextNode(vid.description);
-            vidDelete = document.createElement('span');
-            vidDeleteText = document.createTextNode('X');
+            //vidDescriptionText = document.createTextNode('');
+            vidDescription.innerHTML = vid.description;
+            vidDelete = document.createElement('i');
+            //vidDeleteText = document.createTextNode('X');
 
             vidContainer.className = 'vidContainer';
             vidContent.className = 'vidContent';
+            //vidLoadingThumb.className = 'vidLoadingThumb';
+            vidLoadingThumb.className = 'fa fa-spinner fa-pulse fa-5x';
+            vidThumbContainer.className = 'vidThumbContainer hide1';
             vidThumb.className = 'vidThumb';
+            vidFooter.className = 'vidFooter';
             vidName.className = 'vidName';
-            vidDelete.className = 'vidDelete';
-            vidThumb.src = 'thumb/' + vid._id;
+            vidDelete.className = 'fa fa-trash-o vidDelete';
+            //vidLoadingThumb.src = loadingImage.src;
+            vidThumb.src = 'thumb/' + vid._id + '/thumb';
+            addListener(vidThumb, 'error', false, function () { vidThumb.src = 'img/missing.png'; });
+            //vidThumb.addEventListener('error', );
+            addListener(vidThumb, 'load', true, function () {
+            //vidThumb.addEventListener('load', 
+                // Unhide the loaded image (slowly) and then remove the placeholder.
+                vidThumbContainer.classList.remove('hide1');
+                vidThumbContainer.parentNode.removeChild(vidThumbContainer.parentNode.children[0]);
+            });
 
             vidDescription.className = 'vidDescription';
 
-
             vidName.appendChild(vidNameText);
-            vidContent.appendChild(vidThumb);
-            vidContent.appendChild(vidName);
-            vidDescription.appendChild(vidDescriptionText);
+            vidContent.appendChild(vidLoadingThumb);
+            vidThumbContainer.appendChild(vidThumb);
+            vidContent.appendChild(vidThumbContainer);
+            vidFooter.appendChild(vidName);
+            vidContent.appendChild(vidFooter);
+           // vidDescription.appendChild(vidDescriptionText);
 
+            vidContainer.appendChild(vidContainerText);
             vidContainer.appendChild(vidContent);
             vidContainer.appendChild(vidDescription);
-            //$(vidDescription).hide();
 
-            vidDelete.appendChild(vidDeleteText);
+            //vidDelete.appendChild(vidDeleteText);
             if (vid.userId === user.id || user.isSysAdmin === true) {
-                vidContent.appendChild(vidDelete);
+                vidContainer.appendChild(vidDelete);
 
             }
             vidFrag.appendChild(vidContainer);
 
-            vidContainer.onclick = function () {
+            function vidContainerClick() {
                 var currentState = window.history.state || {};
                 currentState.method = 'listVideos';
                 currentState.scrollTop = document.body.scrollTop;
-                window.history.replaceState(currentState, "List video", "");
-                window.history.pushState({method: 'playVideo', vid: vid._id}, "Play video", "/" + vid._id);
+                currentState.page = vid.page;
+                currentState.limit = vid.limit;
+                currentState.search = vid.search;
+                window.history.replaceState(currentState, 'List video', '');
+                window.history.pushState({method: 'playVideo', vid: vid._id}, 'Play video', '/' + vid._id);
                 playVideo(vid._id);
-            };
-            /*vidDiv.onmouseover = function (ev) {
-                vidDescription.className = 'vidDescriptionShow';
-                console.log(vidDescription);
-            };
-            vidDiv.onmouseout = function (ev) {
-                vidDescription.className = 'vidDescriptionHide';
-            };*/
-            vidDelete.onclick = function (e) {
-                deleteVideo(vid._id);
-                videoList.removeChild(vidContainer);
-                for (j = 0; j < videoListMaster.length; j++) {
-                    if (videoListMaster[j]._id === vid._id) {
-                        videoListMaster.splice(j, 1);
-                        break;
+            }
+            if (vid.encoded === true) {
+                /*addListener(vidContainer, 'click', true, 
+                //vidContainer.onclick = 
+                    function () {
+                        var currentState = window.history.state || {};
+                        currentState.method = 'listVideos';
+                        currentState.scrollTop = document.body.scrollTop;
+                        currentState.page = vid.page;
+                        currentState.limit = vid.limit;
+                        currentState.search = vid.search;
+                        window.history.replaceState(currentState, 'List video', '');
+                        window.history.pushState({method: 'playVideo', vid: vid._id}, 'Play video', '/' + vid._id);
+                        playVideo(vid._id);
+                });*/
+                var longPress;
+                addListener(vidContainer, 'mousedown', true, function (ev) {
+                    longPress = undefined;
+                    pressTimer = setTimeout(function () {
+                        longPress = ev.target;
+                        //console.log(ev.target);
+                        longPress.classList.add('hide1');
+                    }, 500);
+                });
+                addListener(vidContainer, 'mouseout', false, function () {
+                    clearTimeout(pressTimer);
+                    if (longPress) {
+                        longPress.classList.remove('hide1');
                     }
-                }
-                e.stopPropagation();
-            };
+                });
+                addListener(vidContainer, 'mouseup', true, function (ev) {
+                    clearTimeout(pressTimer);
+                    if (longPress) {
+                        longPress.classList.remove('hide1');
+                    }
+                    if (longPress === undefined && ev.button === 0) { vidContainerClick(); }
+                });
+            }
+            addListener(vidDelete, 'mouseup', true,
+            //vidDelete.onclick = 
+                function (e) {
+                    clearTimeout(pressTimer);
+                    deleteVideo(vid._id);
+                    videoList.removeChild(vidContainer);
+                    for (j = 0; j < videoListMaster.length; j++) {
+                        if (videoListMaster[j]._id === vid._id) {
+                            videoListMaster.splice(j, 1);
+                            break;
+                        }
+                    }
+                    e.stopPropagation();
+                });
 
             if (i % 10 === 0) {
                 videoList.appendChild(vidFrag);
@@ -380,31 +743,64 @@ window.iflicks = (function iflicks() {
             }
         });
         videoList.appendChild(vidFrag);
+
+        var nextPrev, nextPage, prevPage;
+        nextPrev = document.createElement('div');
+        nextPage = document.createElement('span');
+        prevPage = document.createElement('span');
+        nextPage.textContent = 'Next';
+        prevPage.textContent = 'Previous';
+        nextPrev.id = 'nextPrev';
+        nextPage.className = 'nextPrev';
+        prevPage.className = 'nextPrev';
+        addListener(nextPage, 'click', true, function () { listVideos(vids.page + 1, vids.limit, vids.search); });
+        addListener(prevPage, 'click', true, function () { listVideos(vids.page - 1, vids.limit, vids.search); });
+        //nextPage.addEventListener('click', function () { listVideos(vids.page + 1, vids.limit, vids.search); });
+        //prevPage.addEventListener('click', function () { listVideos(vids.page - 1, vids.limit, vids.search); });
+
+        if (vids.page > 0) {
+            nextPrev.appendChild(prevPage);
+        }
+        if (vids.count > ((vids.page + 1) * vids.limit)) {
+            nextPrev.appendChild(nextPage);
+        }
+        videoList.appendChild(nextPrev);
     }
 
     /// Get videos from the server and display them
-    function listVideos() {
-        $('#videoList').show();
-        $('#videoListUnencoded').hide();
-        var videoContainer = document.getElementById('videoContainer');
+    function listVideos(page, limit, search) {
+        var i, video, videoList, videoContainer, newVideoPopup;
+        page = page || 0;
+        limit = limit || 10;
+        search = search || '-';
+        newVideoCount = 0;
+        currentVideoDetail = undefined;
+        videoList = document.getElementById('videoList');
+        videoList.classList.remove('hide');
+        document.getElementById('videoListUnencoded').classList.add('hide');
+        videoContainer = document.getElementById('videoContainer');
         videoContainer.classList.add('hide');
         while (videoContainer.firstChild) {
             videoContainer.removeChild(videoContainer.firstChild);
         }
-        //$("#videoContainer").hide();
-        if ($("#video").get(0)) {
-            videojs($("#video").get(0)).dispose();
+        video = document.getElementById('video');
+        if (video !== null) {
+            videojs(video).dispose();
         }
-        //$("#videoContainer").empty();
+        newVideoPopup = document.getElementsByClassName('newVideoPopup');
+        for (i = 0; i < newVideoPopup.length; i++) {
+            newVideoPopup[i].parentNode.removeChild(newVideoPopup[i]);
+        }
+
         clearInterval(intervalCheckEncoded);
         /// If we have already loaded the data from the server then reuse it.
         if (videoListMaster.length > 0) {
             /// If the master list and the number of elements don't match then start again
-            if ($('#videoList').length !== videoListMaster.length) {
+            if (videoList.children.length !== videoListMaster.length) {
                 listVideosShow(videoListMaster);
             }
         } else {
-            window.fetch('videolist', {
+            window.fetch('videolist/' + page + '/' + limit + '/' + search, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -415,29 +811,16 @@ window.iflicks = (function iflicks() {
                     return response.json();
                 })
                 .then(function (json) {
-                    if (Array.isArray(json)) {
+                    if (Array.isArray(json.data)) {
                         videoListMaster = json;
                         listVideosShow(videoListMaster);
                     } else {
-                        showMessage('Non array type returned.', 6);
+                        showMessage('Non array type returned.', 'listtVideos.fetchVideoList', 6);
                     }
                 })
                 .catch(function (ex) {
-                    showMessage(ex, 10);
+                    showMessage(ex, 'listtVideos.fetchVideoList1', 10);
                 });
-
-            /*$.getJSON('videolist')
-                .done(function (json) {
-                    if (Array.isArray(json)) {
-                        videoListMaster = json;
-                        listVideosShow(videoListMaster);
-                    } else {
-                        console.log('Non array type returned.');
-                    }
-                })
-                .fail(function (xhr) {
-                    console.log(xhr);
-                });*/
         }
     }
 
@@ -445,101 +828,66 @@ window.iflicks = (function iflicks() {
         /// Check the browser supports EventSource.  If it's IE then the user has to refresh manually.
         if (window.EventSource !== undefined) {
             newVideoEvents = new window.EventSource('newvideo');
-            newVideoEvents.addEventListener('newVideo',  function () {
-                window.fetch('videolist', {
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(function (response) {
-                        return response.json();
-                    })
-                    .then(function (json) {
-                        if (Array.isArray(json)) {
-                            videoListMaster = json;
-                            listVideosShow(videoListMaster);
-                        } else {
-                            showMessage('Non array type returned.', 6);
-                        }
-                    })
-                    .catch(function (ex) {
-                        showMessage(ex, 10);
-                    });
+            addListener(newVideoEvents, 'newVideo', false, function () {
+            //newVideoEvents.addEventListener('newVideo',  function () {
+                var pop = document.createElement('div');
+                newVideoCount++;
+                pop.className = 'newVideoPopup';
+                pop.innerHTML = '<p>There are ' + newVideoCount + ' new videos</p>';
+
+                addListener(pop, 'click', true, function () {
+                //pop.addEventListener('click', function () {
+                    window.history.pushState({method: 'listVideos', vid: vid._id}, 'List video', '/');
+                    listVideos(0, settings.videoListPageLength);
+                });
+
+                document.body.appendChild(pop);
+                setTimeout(function () { pop.parentNode.removeChild(pop); }, 6000);
             });
         }
     }
 
-        /// Print the video list tothe browser.
-    function listUnencodedShow(list) {
-        var videoList, vidFrag, vidDiv, vidThumb, vidName, vidNameText, vidProgress, vidProgressText;
-        videoList = document.getElementById('videoListUnencoded');
-        while (videoList.firstChild) {
-            videoList.removeChild(videoList.firstChild);
-        }
-        vidFrag = document.createDocumentFragment();
-        list.forEach(function (vid, i) {
-            vidDiv = document.createElement('div');
-            vidThumb = document.createElement('img');
-            vidName = document.createElement('span');
-            vidNameText = document.createTextNode(vid.name);
-            vidProgress = document.createElement('span');
-            if (vid.encodeProgress === undefined) {
-                vidProgressText = document.createTextNode('Encoding not started.');
-            } else {
-                vidProgressText = document.createTextNode(Math.round(vid.encodeProgress) + ' %');
-            }
-            vidDiv.className = 'vidDiv';
-            vidThumb.className = 'vidThumb';
-            vidName.className = 'vidName';
-            vidProgress.className = 'vidName';
-            vidThumb.src = 'thumb/' + vid._id;
-
-            vidFrag.appendChild(vidDiv);
-            vidDiv.appendChild(vidThumb);
-            vidName.appendChild(vidNameText);
-            vidProgress.appendChild(vidProgressText);
-            vidDiv.appendChild(vidName);
-            vidDiv.appendChild(vidProgress);
-            if (i % 10 === 0) {
-                videoList.appendChild(vidFrag);
-                vidFrag = document.createDocumentFragment();
-            }
-        });
-        videoList.appendChild(vidFrag);
-    }
-
     /// Get videos from the server and display them
-    function listUnencoded() {
-        var videoContainer;
-        $('#videoListUnencoded').show();
-        $('#videoList').hide();
+    function listUnencoded(page, limit) {
+        var video, videoList, videoContainer;
+        currentVideoDetail = undefined;
+        videoList = document.getElementById('videoList');
+        videoList.classList.remove('hide');
+        document.getElementById('videoListUnencoded').classList.add('hide');
         videoContainer = document.getElementById('videoContainer');
         videoContainer.classList.add('hide');
-        //$("#videoContainer").hide();
-        if ($("#video").get(0)) {
-            videojs($("#video").get(0)).dispose();
+        while (videoContainer.firstChild) {
+            videoContainer.removeChild(videoContainer.firstChild);
+        }
+
+        video = document.getElementById('video');
+        if (video !== null) {
+            videojs(video).dispose();
         }
         function getUnencoded() {
-            window.fetch('videolistunencoded', {
-                credentials: 'include'
+            window.fetch('videolistunencoded/' + page + '/' + limit, {
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
             })
                 .then(function (response) {
                     return response.json();
                 })
                 .then(function (json) {
-                    if (Array.isArray(json)) {
-                        listUnencodedShow(json);
+                    if (Array.isArray(json.data)) {
+                        listVideosShow(json);
                     } else {
-                        showMessage('Non array type returned.', 6);
+                        showMessage('Non array type returned.', 'listUnencoded.getUnencoded', 6);
                     }
                 })
                 .catch(function (ex) {
-                    showMessage(ex, 6);
+                    showMessage(ex, 'listUnencoded.getUnencoded1', 6);
                 });
         }
         getUnencoded();
+        clearInterval(intervalCheckEncoded);
         intervalCheckEncoded = setInterval(getUnencoded, 5000);
     }
 
@@ -549,52 +897,72 @@ window.iflicks = (function iflicks() {
             method: 'DELETE'
         })
             .catch(function (ex) {
-                showMessage(ex, 6);
+                showMessage(ex, 'deleteVideo.fetch', 6);
             });
-        /*$.ajax({
-            url: 'video/' + vid,
-            type: 'DELETE',
-        })
-            .done(function (res) {
-                console.log(res);
-            })
-            .fail(function (jqxhr, textStatus, error) {
-                var err = textStatus + ', ' + error;
-                console.log(err);
-            });*/
     }
 
     function unDeleteVideo(vid) {
-        $.ajax({
-            url: 'undelete/' + vid,
+        window.fetch('undelete/' + vid, {
             credentials: 'include',
-            type: 'POST',
+            method: 'POST'
         })
-            .done(function (res) {
-                console.log(res);
+            .catch(function (ex) {
+                showMessage(ex, 'undeleteVideo.fetch', 6);
+            });
+    }
+    function addUserHandler(ev) {
+        var i, el, readyToSend = true, newUser = {};
+        for (i = 0; i < ev.target.parentNode.childNodes.length; i++) {
+            el = ev.target.parentNode.childNodes[i];
+            if (el.type === 'text') {
+                newUser[el.name] = el.value;
+                if (el.value.length < 2) {
+                    readyToSend = false;
+                    showMessage(el.name + ' is required.', 'addUserHandler', 5);
+                }
+            } else if (el.type === 'checkbox') {
+                newUser[el.name] = el.checked;
+            }
+        }
+        if (!readyToSend) { return; }
+        window.fetch('/user', {
+            credentials: 'include',
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newUser)
+        })
+            .then(function (response) {
+                return response.json();
             })
-            .fail(function (jqxhr, textStatus, error) {
-                var err = textStatus + ', ' + error + jqxhr;
-                console.log(err);
+            .then(function (json) {
+                if (json.error) {
+                    showMessage(json.error, 'addUserHandler.fetchUser', 6);
+                } else if (json.reply) {
+                    showMessage(json.reply, 'addUserHandler.fetchUser1', 7);
+                    showHideElement('createAccountContainer');
+                } else {
+                    showMessage('Unexpected response', 'addUserHandler.fetchUser2', 10);
+                }
+            })
+            .catch(function (ex) {
+                showMessage(ex.message, 'addUserHandler.fetchUser3', 10);
             });
     }
 
-    /// Show the upload form
     function showUploadContainer() {
-        $('#uploadContainer').toggle('medium');
-        /*var uploadContainer = document.getElementById('uploadContainer');
+        showHideElement('uploadContainer');
+    }
 
-        if (uploadContainer.style.display === 'inline-block' && uploadContainer.style.height <= 0) {
-            uploadContainer.style.display = 'none';
-        } else if (uploadContainer.style.display === 'none' && heightChange === undefined) {
-            uploadContainer.style.display = 'inline-block';
-            uploadContainer.style.height = uploadContainer.style.height + 10;
-            setTimeout(showUploadContainer, 30, 10);
-        }*/
+    /// Show the create account form
+    function showCreateAccount() {
+        showHideElement('createAccountContainer');
     }
     function previewFile() {
         // Works but hits processor and so UI.
-        var thumbVidSrc = document.getElementById('thumbVidSrc');
+        //var thumbVidSrc = document.getElementById('thumbVidSrc');
         var thumbVid = document.getElementById('thumbVid');
 
         var thumbVidCanvas = document.getElementById('thumbVidCanvas');
@@ -611,12 +979,25 @@ window.iflicks = (function iflicks() {
         if (file) {
             reader.readAsDataURL(file);
         } else {
-            thumbVid.src = "";
+            thumbVid.src = '';
         }
     }
 
-    /// Login
+    function cookieCheck() {
+        if (getCookie('cookieConsent') === 'true' && document.getElementById('cookieBanner') !== null) {
+            document.getElementById('cookieBanner').className = 'hide';
+        }
+    }
+    function cookieAccept() {
+        document.getElementById('cookieBanner').className = 'hide';
+        setCookie('cookieConsent', 'true', 1);
+    }
 
+    function closeInfoPanel() {
+        document.getElementById('infoContainer').className = 'hide';
+        setCookie('closeInfoPanel', 'true', 1);
+    }
+    /// Login
     function postLogin() {
         if (Object.getOwnPropertyNames(user).length > 0) {
 
@@ -652,7 +1033,7 @@ window.iflicks = (function iflicks() {
             })
             .then(function (json) {
                 if (json.error) {
-                    showMessage(json.error, 6);
+                    showMessage(json.error, 'login.fetchLogin', 7);
                 } else {
                     //(Object.getOwnPropertyNames(json).length > 0) {
                     user = json;
@@ -660,7 +1041,7 @@ window.iflicks = (function iflicks() {
                 }
             })
             .catch(function (ex) {
-                showMessage(ex, 6);
+                showMessage(ex, 'login.fetchLogin1',  6);
             });
     }
     function loginCheck() {
@@ -683,7 +1064,7 @@ window.iflicks = (function iflicks() {
                 }
             })
             .catch(function (ex) {
-                showMessage(ex, 6);
+                showMessage(ex, 'loginCheck.fetchLogin',  6);
                 //document.getElementById('message').textContent = ex;
             });
     }
@@ -705,10 +1086,25 @@ window.iflicks = (function iflicks() {
             }
         })
             .catch(function (ex) {
-                showMessage(ex, 6);
+                showMessage(ex, 'logout.fetchLogin',  6);
             });
     }
 
+    /** Rudimentary speed test */
+    function downloadSpeedTest() {
+        var startTime, endTime, duration, bitsLoaded = 3422856, speed, download = new Image();
+        download.onload = function () {
+            endTime = (new Date()).getTime();
+            duration = (endTime - startTime) / 1000;
+            speed = bitsLoaded / duration / 1024 / 1024;
+            if (speed < 1) {
+                speed = (speed * 1.8).toFixed(2);  // Seems to be out by just under half
+                showMessage('The internet speed between you and us is slow (' + speed + ' Mbps) so these videos may not play smoothly.', 'downloadSpeedTest', 7);
+            }
+        };
+        startTime = (new Date()).getTime();
+        download.src = 'img/random.jpg?n=' + startTime;
+    }
 
     /// Check to see if the browser supports HTML5 vieo, returns boolean
     function supportsVideo() {
@@ -717,7 +1113,7 @@ window.iflicks = (function iflicks() {
     /// Checks the browser is suported and then runs the callback.
     function checkFeatures(callback) {
         if (window.FormData === undefined || supportsVideo() !== true) {
-            document.getElementById('body').innerHTML = '<p>Your browser is not supported.</p>';
+            document.getElementById('body').innerHTML = '<p>Your browser is not supported.  i-flicks is supported by all modern browsers.  It doesn\'t work on old versions of Internet Explorer or old mobile browsers.</p>';
             return;
         }
         callback();
@@ -726,50 +1122,118 @@ window.iflicks = (function iflicks() {
     /// Setup the page.  Checks the browser is supported and then loads the page.
     function start() {
         checkFeatures(function () {
-            document.getElementById('submitUploadNewVideo').onclick = uploadFile;
+            addListener('submitUploadNewVideo', 'click', true, uploadFile);
+            //document.getElementById('submitUploadNewVideo').addEventListener('click', uploadFile);
             ///document.getElementById('videoFile').onchange = previewFile; // Works but hits processor ans so UI.
-            document.getElementById('submitLogin').onclick = login;
-            document.getElementById('submitLogout').onclick = logout;
-            document.getElementById('showUploadContainer').onclick = showUploadContainer;
-            document.getElementById('showVideoList').onclick = function () {
-                //window.history.replaceState(currentState, "Show video", "");
-                window.history.pushState({method: 'listVideos', vid: vid._id}, "List video", "/");
-                listVideos();
-            };
-            document.getElementById('showUnencodedVideoList').onclick = function () {
-                //window.history.replaceState(currentState, "Show video", "");
-                window.history.pushState({method: 'listUnencoded'}, "List unencoded videos", "/");
-                listUnencoded();
-            };
+            addListener('submitLogin', 'click', true, login);
+            //document.getElementById('submitLogin').addEventListener('click', login);
+            addListener('submitLogout', 'click', true, logout);
+            //document.getElementById('submitLogout').addEventListener('click', logout);
+
+            addListener('closeInfoPanel', 'click', true, closeInfoPanel);
+            /*infoPanel = document.getElementById('closeInfoPanel');
+            if (infoPanel) {
+                document.getElementById('closeInfoPanel').addEventListener('click', closeInfoPanel);
+            }*/
+            addListener('submitCookieAccept', 'click', true, cookieAccept);
+            /*cookieApt = document.getElementById('submitCookieAccept');
+            if (cookieApt) {
+                cookieApt.addEventListener('click', cookieAccept);
+            }*/
+            addListener('showUploadContainer', 'click', true, showUploadContainer);
+            //document.getElementById('showUploadContainer').addEventListener('click', showUploadContainer);
+
+            addListener('showCreateAccount', 'click', true, showCreateAccount);
+            addListener('submitCreateAccount', 'click', true, addUserHandler);
+
+            /*showCreateAcc = document.getElementById('showCreateAccount');
+            if (showCreateAcc) {
+                showCreateAcc.addEventListener('click', showCreateAccount);
+                document.getElementById('submitCreateAccount').addEventListener('click', addUserHandler);
+            }*/
+
+            addListener('showVideoList', 'click', true, function () {
+                //window.history.replaceState(currentState, 'Show video', '');
+                window.history.pushState({method: 'listVideos', vid: vid._id}, 'List video', '/');
+                listVideos(0, settings.videoListPageLength);
+            });
+            /*document.getElementById('showVideoList').addEventListener('click', function () {
+                //window.history.replaceState(currentState, 'Show video', '');
+                window.history.pushState({method: 'listVideos', vid: vid._id}, 'List video', '/');
+                listVideos(0, settings.videoListPageLength);
+            });*/
+            addListener('showUnencodedVideoList', 'click', true, function () {
+                //window.history.replaceState(currentState, 'Show video', '');
+                window.history.pushState({method: 'listUnencoded'}, 'List unencoded videos', '/');
+                listUnencoded(0, settings.videoListPageLength);
+            });
+            /*document.getElementById('showUnencodedVideoList').addEventListener('click', function () {
+                //window.history.replaceState(currentState, 'Show video', '');
+                window.history.pushState({method: 'listUnencoded'}, 'List unencoded videos', '/');
+                listUnencoded(0, settings.videoListPageLength);
+            });*/
 
             /// forward and back button handler.
-            window.addEventListener('popstate', function (event) {
-                console.log(event.state.method);
+            addListener(window, 'popstate', true, function (event) {
+                console.log('POPSTATE: ' + event.state.method);
                 if (event.state.method === 'playVideo') {
                     playVideo(event.state.vid);
                 } else if (event.state.method === 'listVideos') {
-                    listVideos();
+                    listVideos(event.state.page, event.state.limit, event.state.search);
                     if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
                         window.scroll(event.state.scrollTop, 0);
                     }
                 }
                 //updateContent(event.state);
             });
+            /*window.addEventListener('popstate', function (event) {
+                console.log(event.state.method);
+                if (event.state.method === 'playVideo') {
+                    playVideo(event.state.vid);
+                } else if (event.state.method === 'listVideos') {
+                    listVideos(event.state.page, event.state.limit, event.state.search);
+                    if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
+                        window.scroll(event.state.scrollTop, 0);
+                    }
+                }
+                //updateContent(event.state);
+            });*/
+            addListener(window, 'resize', true, function () {
+                var vidDims, currentTime, isPaused;
+                if (currentVideoDetail !== undefined && currentVideoDetail.fileDetail && currentVideoDetail.fileDetail.width && currentOrientation !== window.orientation) {
+                    currentOrientation = window.orientation;
+                    vidDims = getViewerDimensions(currentVideoDetail.fileDetail.width, currentVideoDetail.fileDetail.height);
+                    currentTime = vjs.currentTime();
+                    isPaused = vjs.paused();
+                    vjs.dimensions(vidDims.videoWidth, vidDims.videoHeight);
+                    vjs.src([{type: 'video/mp4', src: 'video/' + currentVideoDetail._id + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() },
+                            {type: 'video/webm', src: 'video/' + currentVideoDetail._id + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() }
+                        ]);
+                    vjs.currentTime(currentTime);
+                    if (!isPaused) {
+                        vjs.play();
+                    }
+               // showMessage(vidDims.videoWidth + ' -- ' + vidDims.videoHeight, 'window.resize', 3);
+               // showMessage(vidDims.viewportWidth + ' == ' + vidDims.viewportHeight, 'window.resize', 3);
+                }
+            });
             loginCheck();
             watchForNewVideos();
-            listVideos();
+            listVideos(0, settings.videoListPageLength);
+            downloadSpeedTest();
         });
+        cookieCheck();
     }
-    if (document.addEventListener !== undefined) {
+    /*if (document.addEventListener !== undefined) {
         document.addEventListener('DOMContentLoaded', function () {
             start();
         });
     } else {
         start();
-    }
+    }*/
     start();
 
     return {
         playVideo: playVideo
     };
-}());
+}({}));

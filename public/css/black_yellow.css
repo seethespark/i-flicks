@@ -1,0 +1,70 @@
+body {
+  	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  	background-color: black;
+	color: rgb(252, 232, 50);
+}
+a {
+  color: #00B7FF;
+}
+#cookieBanner {
+	background-color: rgb(99, 96, 96);
+}
+#headerBar {
+	background: rgb(125,126,125); /* Old browsers */
+	background: -moz-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%, rgba(14,14,14,1) 100%); /* FF3.6+ */
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(125,126,125,1)), color-stop(100%,rgba(14,14,14,1))); /* Chrome,Safari4+ */
+	background: -webkit-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* Opera 12+ */
+	background: -ms-radial-gradient(center, ellipse cover, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* IE10+ */
+	background: radial-gradient(ellipse at center, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#7d7e7d', endColorstr='#0e0e0e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+}
+#info {
+	border: thin grey solid;
+}
+#closeInfoPanel {
+	border: medium white groove;
+}
+.vidContainer {
+	border: thin rgb(232, 232, 50) solid;
+}
+.vidContent {
+	background-color: black;
+}
+.vidThumb {
+	border: thin grey solid;
+}
+.vidName {
+	color: rgb(252, 232, 50);
+}
+.vidDelete {
+	border: medium white groove;
+}
+#uploadContainerFile {
+	border: dashed 1px white;
+	background-color: grey;
+}
+
+#videoInfo {
+	background-color: grey;
+}
+#videoName {
+	background-color: black;
+}
+#videoDescription {
+	background-color: black;
+}
+#videoPublic {
+	background-color: black;
+}
+#videoRunCount {
+	background-color: black;
+}
+
+.editable {
+	background-color: rgb(68, 68, 71);
+}
+.newVideoPopup {
+	background-color: grey;
+	border: thick brown solid;
+}

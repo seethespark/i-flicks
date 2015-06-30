@@ -1,8 +1,6 @@
 var assert = require("assert"),
     error = require('../../models/error');
-    //formatUkDate = require('../../lib/utils').formatUkDate,
-    //formatPostcode = require('../../lib/utils').formatPostcode;
-
+    
 describe('error object', function () {
     describe('add', function () {
         it('should return nothing', function () {
@@ -25,7 +23,7 @@ describe('error object', function () {
 
     describe('list', function () {
         it('should return an array', function () {
-            error.list(10, function (errrr, list) {
+            error.list(10, '-', function (errrr, list) {
                 assert.equal(undefined, errrr);
                 assert.equal(true, Array.isArray(list));
             });

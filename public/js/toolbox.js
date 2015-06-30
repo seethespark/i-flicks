@@ -38,6 +38,16 @@ var iflicks = (function iflicks() {
             setTimeout(function () { showMessage(); }, timeout);
         }
     }
+    function getCookie(k) { return (document.cookie.match('(^|; )' + k + '=([^;]*)') || 0)[2]; }
+    function setCookie(n, v, d) {
+        var e, dd;
+        if (d) {
+            dd = new Date();
+            dd.setTime(dd.getTime() + (d * 24 * 60 * 60 * 1000));
+            e = "; expires=" + dd.toGMTString();
+        } else { e = ""; }
+        document.cookie = n + "=" + v + e + "; path=/";
+    }
 
     handlers.deleteUser = function deleteUserHandler(ev, userId) {
         var c = window.confirm("Are you sure you want to delete?");
@@ -293,69 +303,62 @@ var iflicks = (function iflicks() {
             })
             .then(callback)
             .catch(function (ex) {
-                console.log(ex);
+                console.log(ex.message);
+                if (ex.message === 'Failed to fetch') {
+                    document.location.reload(false);
+                }
             });
     }
-    function errorViewerClick(e) {
+
+    function viewerClick(e) {
         e.preventDefault();
-        var extras = document.getElementById('extras');
+        var extras = document.getElementById('extras'),
+            targetId = e.target.id,
+            search = document.getElementById('search').value,
+            limit = document.getElementById('limit').value;
+        if (search === undefined || search.length === 0) {
+            search = '-';
+        }
         while (extras.firstChild) {
             extras.removeChild(extras.firstChild);
         }
 
-        fetchy('/toolbox/errorviewer/0', function (colList) {
+        fetchy('/toolbox/' + targetId + 'col', function (colList) {
             displayTableHead(colList, 'list');
-            fetchy('/toolbox/errorviewer/20', function (errorList) {
-                displayTableBody(errorList, colList, true, 'list');
+            fetchy('/toolbox/' + targetId + '/' + limit + '/' + search, function (itemList) {
+                displayTableBody(itemList, colList, true, 'list');
                 clearInterval(listPollInterval);
                 listPollInterval = setInterval(function () {
-                    fetchy('/toolbox/errorviewer/20', function (errorList) {
-                        displayTableBody(errorList, colList, true, 'list');
+                    fetchy('/toolbox/' + targetId + '/' + limit + '/' + search, function (itemList) {
+                        displayTableBody(itemList, colList, true, 'list');
                     });
                 }, 5000);
             });
         });
     }
 
-
-    function flickViewerClick(e) {
-        e.preventDefault();
-        var extras = document.getElementById('extras');
-        while (extras.firstChild) {
-            extras.removeChild(extras.firstChild);
-        }
-
-        fetchy('/toolbox/flickviewercol', function (colList) {
-            displayTableHead(colList, 'list');
-            fetchy('/toolbox/flickviewer', function (flickList) {
-                displayTableBody(flickList, colList, true, 'list');
-                clearInterval(listPollInterval);
-                listPollInterval = setInterval(function () {
-                    fetchy('/toolbox/flickviewer', function (flickList) {
-                        displayTableBody(flickList, colList, true, 'list');
-                    });
-                }, 5000);
-            });
-        });
-    }
     function userViewerShow() {
+        var search = document.getElementById('search').value,
+            limit = document.getElementById('limit').value;
+        if (search === undefined || search.length === 0) {
+            search = '-';
+        }
         fetchy('/toolbox/userviewercol', function (colList) {
             displayTableHead(colList, 'list');
             addUserForm(colList);
-            fetchy('/toolbox/userviewer', function (flickList) {
+            fetchy('/toolbox/userviewer/' + limit + '/' + search, function (flickList) {
                 displayTableBody(flickList, colList, true, 'list');
                 clearInterval(listPollInterval);
                 listPollInterval = setInterval(function () {
-                    fetchy('/toolbox/userviewer', function (flickList) {
+                    fetchy('/toolbox/userviewer/' + limit + '/' + search, function (flickList) {
                         displayTableBody(flickList, colList, true, 'list');
                     });
                 }, 5000);
             });
         });
         function addUserForm(colList) {
-            var i, addButton, addContainer = document.getElementById('extras'), row = document.createElement('span');
+            var i, col, cellTextNode, addButton, addContainer = document.getElementById('extras'), row = document.createElement('span');
             for (i = 0; i < colList.length; i++) {
-                var col, cellTextNode;
                 col = colList[i];
                 if (col.type === 'inputText') {
                     cellTextNode = document.createElement('input');
@@ -386,10 +389,35 @@ var iflicks = (function iflicks() {
         userViewerShow();
     }
 
+
+    function limitChange() {
+        clearInterval(listPollInterval);
+        displayTableHead([], 'list');
+        displayTableBody([], [], false, 'list');
+    }
+
+    function cookieCheck() {
+        if (getCookie('cookeiConsent') === 'true') {
+            document.getElementById('cookieBanner').className = 'hide';
+        }
+    }
+    function cookieAccept() {
+        document.getElementById('cookieBanner').className = 'hide';
+        setCookie('cookeiConsent', 'true', 1);
+    }
+
     function start() {
-        document.getElementById('errorviewer').addEventListener('click', errorViewerClick);
-        document.getElementById('flickviewer').addEventListener('click', flickViewerClick);
+        var i, cookieApt, viewers = document.getElementsByClassName('viewers');
+        for (i = 0; i < viewers.length; i++) {
+            viewers[i].addEventListener('click', viewerClick);
+        }
         document.getElementById('userviewer').addEventListener('click', userViewerClick);
+        document.getElementById('limit').addEventListener('change', limitChange);
+        cookieApt = document.getElementById('submitCookieAccept');
+        if (cookieApt) {
+            cookieApt.addEventListener('click', cookieAccept);
+        }
+        cookieCheck();
     }
 /* When loading with Modernizr this isn't required
     if (document.addEventListener !== undefined) {

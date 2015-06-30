@@ -1,0 +1,67 @@
+body {
+  	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  	background-color: white;
+	color: rgb(89, 1, 1);
+}
+a {
+  color: #00B7FF;
+}
+#cookieBanner {
+	background-color: rgb(224, 224, 224);
+}
+#headerBar {
+	background: rgb(255,255,255); /* Old browsers */
+	/*background: -moz-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%, rgba(237,237,237,1) 35%, rgba(255,255,255,1) 100%);*/ /* FF3.6+ */
+	/*background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(255,255,255,1)), color-stop(35%,rgba(237,237,237,1)), color-stop(100%,rgba(255,255,255,1)));*/ /* Chrome,Safari4+ */
+	/*background: -webkit-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* Chrome10+,Safari5.1+ */
+	/*background: -o-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* Opera 12+ */
+	/*background: -ms-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* IE10+ */
+	background: radial-gradient(ellipse at center,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%); /* W3C */
+	/*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=1 );*/ /* IE6-9 fallback on horizontal gradient */
+}
+#info {
+	border: thin grey solid;
+}
+.vidContainer {
+	border: thin rgb(163, 9, 9) solid;
+}
+.vidContent {
+	background-color: white;
+}
+.vidThumb {
+	border: thin grey solid;
+}
+.vidDelete {
+	border: medium white groove;
+	background-color: white;
+}
+#uploadContainerFile {
+	border: dashed 1px white;
+	background-color: grey;
+}
+#videoInfo {
+	background-color: rgb(234, 232, 232);
+}
+.videoTextItem {
+	background-color: white;
+}/*
+#videoName {
+}
+#videoDescription {
+	background-color: white;
+}
+#videoPublic {
+	background-color: white;
+}
+#videoRunCount {
+	background-color: white;
+}*/
+.editable {
+	border: thin solid rgb(232, 232, 232);
+}
+
+.newVideoPopup {
+	background-color: grey;
+	border: thick brown solid;
+}
+ #github {background-color: #ccc;}

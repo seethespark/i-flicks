@@ -2,7 +2,6 @@
 .hgignore
 node_modules/**
 uploads/**
-doc/**
 iflicksdb
 errorsdb
 usersdb

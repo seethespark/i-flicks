@@ -55,15 +55,18 @@ module.exports = function (grunt) {
                     banner: '/* My minified css file */'
                 },
                 files: {
-                    'public/css/index.min.css': ['public/css/index.css']
+                    'public/css/white.min.css': ['public/css/layout.css', 'public/css/white.css'],
+                    'public/css/black_yellow.min.css': ['public/css/layout.css', 'public/css/black_yellow.css'],
+                    'public/css/toolbox.min.css': ['public/css/toolbox.css']
                 }
             }
         },
         jsdoc : {
             dist : {
-                src: ['app.js', 'routes/*.js', 'models/*.js', 'lib/*.js', 'public/js/*.js'],
+                src: ['app.js', 'routes/*.js', 'models/*.js', 'lib/*.js', 'public/js/*.js', 'README.md'],
                 options: {
-                    destination: 'doc'
+                    destination: 'doc',
+                    configure: '.jsdoc'
                 }
             }
         },

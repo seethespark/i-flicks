@@ -4,30 +4,93 @@
  * Module dependencies.
  */
 
-var app = require('../app')({});
+var app = require('../app')({
+  mailgunKey: 'key-aa3bcc54531f979ba37c1c26dce394fe',
+  mailgunDomain: 'mg.seethespark.com',
+  mailFrom: 'i-flicks@seethespark.com',
+  env: 'development', // development or production. 
+  css: 'index.css',
+  sessionSecret: 'scrambledeggs',
+  statsDServer: '192.168.0.25',
+  statsDPrefix: 'i-flicks-dev'
+});
+/*var app = require('../app')({
+  mailgunKey: 'key-aa3bcc54531f979ba37c1c26dce394fe',
+  gmailUsername: 'monitor@nickwhiteley.com',
+  gmailPassword: 'k1p00f#ssoaauyan555ksu88sa?'
+});*/
 var debug = require('debug')('iflicks:server');
 var http = require('http');
+var https = require('https');
+var http2 = require('http2');
+var fs = require('fs');
 
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || 3001);
+var port = normalizePort(process.env.PORT || 3000);
 //app.set('port', port);
 
 /**
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server, options, httpType = 'http';
+options = {
+  key: fs.readFileSync(__dirname + '/../../../ssl/server.key'),
+    cert: fs.readFileSync(__dirname + '/../../../ssl/server.crt'),
+  ca: fs.readFileSync(__dirname + '/../../../ssl/ca.crt'),
+  maxConcurrentStreams: 100
+};
+
+if (httpType === 'spdy') {
+  options.windowSize = 1024;
+  server = spdy.createServer(options, app);
+  server.listen(port, function() {
+    var addr = this.address();
+    console.log('SPDY server is listening on %s:%d', addr.address, addr.port);
+  });
+} else if  (httpType === 'http2') {
+  server = http2.createServer(options, app);
+  server.listen(port, function(a, b) {
+    var addr = this.address();
+    console.log('HTTP2 server is listening on %s:%d', addr.address, addr.port);
+  });
+} else if  (httpType === 'https') {
+  server = https.createServer(options, app);
+  server.listen(port, function(a, b) {
+    var addr = this.address();
+    console.log('HTTPS server is listening on %s:%d', addr.address, addr.port);
+  });
+} else {
+  server = http.createServer(app);
+  server.listen(port);
+  server.on('listening', onListening);
+}
+
+/**
+ * Redirect to https
+ */
+
+ if  (httpType !== 'http') {
+  http.createServer(function (req, res) {
+    var correctedServer = req.headers.origin || req.headers.referrer || req.headers.host;
+    var correctedPath = req.headers['x-rewrite-url'] || req.path || '/';
+    correctedServer = correctedServer.replace(':3000', ':' + port);
+    var correctedUrl = 'https://' + correctedServer.replace('http://', '') + correctedPath;
+    //console.log(correctedUrl);
+    res.writeHead(307, {'location': correctedUrl});
+    res.end();
+  }).listen(3000);
+}
+
 
 /**
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(port);
 server.on('error', onError);
-server.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.

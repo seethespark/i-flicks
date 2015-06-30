@@ -1,55 +1,157 @@
+// Error code F04
 var Nedb = require('nedb');
 var path = require('path');
+var fs = require('fs');
+
+/** 
+ * Programmatic representation of a flick, or video.
+ * 
+ * @module flick
+ */
+
 
 var db = new Nedb({ filename: global.iflicks_settings.databasePath + 'iflicksdb', autoload: true });
+var dbView = new Nedb({ filename: global.iflicks_settings.databasePath + 'iflicksviewdb', autoload: true });
 
 var statsD, flick = {};
 
 flick.db = db;
+flick.dbView = dbView;
 
 flick.setStatsD = function (statsd) {
     statsD = statsd;
 };
 
-flick.thumb = function (id, callback) {
-    var dbStartTime = new Date();
-    db.findOne({_id: id}, /*{_id: 1, name: 1, description: 1},*/ function (err, doc) {
+/** 
+ * Get the thumbnail path of a flick
+ * @param {string} id - The ID of the flick.
+ */
+flick.thumb = function (id, fileName, user, callback) {
+    var where, userId, tmpThubmnailPath, dbStartTime = new Date();
+    user = user || {};
+    where = {_id: id };
+    if (user.isSysAdmin) {
+        // Do nothing
+    } else if (user.id) {
+        userId = user.id || 'zzzzzzzzzzzzzzzz'; // the user columns could be undefined
+        where.$or =  [{userId: userId}, {uploader: userId}, {public: true}, {directLink: true} ];
+    } else {
+        where.$or =  [{public: true}, {directLink: true} ];
+
+    }
+    db.findOne(where, /*{_id: 1, name: 1, description: 1},*/ function (err, doc) {
         if (statsD) {
             statsD.timing('db.flick.thumb', dbStartTime);
         }
         if (err) { callback(err, undefined); return; }
         if (doc === null) { callback(new Error('Missing flick.'), undefined); return; }
-        callback(undefined, doc.pathToThumbnail);
+        tmpThubmnailPath = doc.mediaPath + '/' + fileName + '.jpg';
+        fs.stat(tmpThubmnailPath, function (err, stat) {
+            if (err) {
+                callback(undefined, doc.mediaPath + '/thumb.jpg');
+            } else {
+                callback(undefined, tmpThubmnailPath);
+            }
+        });
     });
 };
 
-flick.load = function (id, callback) {
-    var dbStartTime = new Date();
-    db.findOne({_id: id}, /*{_id: 1, name: 1, description: 1},*/ function (err, doc) {
-        if (statsD) {
-            statsD.timing('db.flick.load', dbStartTime);
+flick.load = function (id, user, callback) {
+    try {
+        var where, userId, dbStartTime = new Date();
+        user = user || {};
+        where = {_id: id };
+        if (user.isSysAdmin) {
+            // Do nothing
+        } else if (user.id) {
+            userId = user.id || 'zzzzzzzzzzzzzzzz'; // the user columns could be undefined
+            where.$or =  [{userId: userId}, {uploader: userId}, {public: true}, {directLink: true} ];
+        } else {
+            where.$or =  [{public: true}, {directLink: true} ];
         }
-        if (err) { callback(err, undefined); return; }
-        if (doc === null) { callback(new Error('Missing flick.'), undefined); return; }
-        flick._id = doc._id;
-        flick.userId = doc.userId || doc.uploader;
-        flick.name = doc.name;
-        flick.description = doc.description;
-        flick.playCount = doc.playCount;
-        flick.fileDetail = doc.fileDetail;
-        callback(undefined, doc);
-    });
+        db.findOne(where, /*{_id: 1, name: 1, description: 1},*/ function (err, doc) {
+            if (statsD) {
+                statsD.timing('db.flick.load', dbStartTime);
+            }
+            if (err) { callback(err, undefined); return; }
+            if (doc === null) { callback(new Error('Missing flick.1'), undefined); return; }
+            flick._id = doc._id;
+            flick.userId = doc.userId || doc.uploader;
+            flick.name = doc.name;
+            flick.description = doc.description;
+            flick.playCount = doc.playCount;
+            flick.fileDetail = doc.fileDetail;
+            flick.rating = doc.rating;
+            callback(undefined, doc);
+        });
+    } catch (ex) {
+        ex.code = 'F04002';
+        callback(ex);
+    }
 };
+
 
 flick.play = function (id, callback) {
-    var dbStartTime = new Date();
-    db.update({_id: id}, { $inc: { playCount: 1 } }, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.play', dbStartTime);
+    try {
+        var dbStartTime = new Date();
+        db.update({_id: id}, { $inc: { playCount: 1 } }, function (err) {
+            if (statsD) {
+                statsD.timing('db.flick.play', dbStartTime);
+            }
+            if (err) { callback(err); return; }
+            callback();
+        });
+    } catch (ex) {
+        ex.code = 'F04003';
+        callback(ex);
+    }
+};
+
+flick.rating1 = function (id, userId, ratingValue, callback) {
+    try {
+        var dbStartTime = new Date();
+        db.update({_id: id}, { $set: { rating: ratingValue } }, function (err) {
+            if (statsD) {
+                statsD.timing('db.flick.rating', dbStartTime);
+            }
+            if (err) { callback(err); return; }
+            callback();
+        });
+    } catch (ex) {
+        console.log(ex);
+        ex.code = 'F04004';
+        callback(ex);
+    }
+};
+
+flick.view = function (req, callback) {
+    try {
+        var dbStartTime = new Date(), doc = {}, flickId, ip, userId;
+        if (req.user && req.user.id) {
+            userId = req.user.id;
+        } else {
+            userId = 'Anonymous';
         }
-        if (err) { callback(err); return; }
-        callback();
-    });
+        flickId = req.params.id || req.body.id;
+        ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+        doc = {
+            flickId: flickId,
+            userId: userId,
+            ipAddress: ip,
+            dateEntered: new Date()
+        };
+
+        dbView.insert(doc, function (err, newDoc) {
+            if (statsD) {
+                statsD.timing('db.flick.view', dbStartTime);
+            }
+            if (err) { callback(err); return; }
+            callback();
+        });
+    } catch (ex) {
+        ex.code = 'F04001';
+        callback(ex);
+    }
 };
 
 flick.add = function (newFlick, callback) {
@@ -64,7 +166,10 @@ flick.add = function (newFlick, callback) {
         path: newFlick.path || 'unknown',
         originalname: newFlick.originalname || 'unknown',
         playCount: 0,
-        encoded: false
+        encoded: newFlick.encoded || false,
+        rating: newFlick.rating,
+        fileDetail: newFlick.fileDetail,
+        mediaPath: newFlick.mediaPath || 'unknown'
     };
 
     db.insert(doc, function (err, newDoc) {

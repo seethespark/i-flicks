@@ -23,6 +23,7 @@ router.put('/:filename',
             doc = {
                 uploader: req.user.id,
                 name: req.body.name,
+                tags: req.body.tags,
                 description: req.body.description,
                 emailComplete: req.body.emailComplete,
                 storageName: storageName,

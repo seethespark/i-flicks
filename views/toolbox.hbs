@@ -1,8 +1,25 @@
 <ul id="toolList">
-<li><a href="#errorviewer" id="errorviewer">Error viewer</a>
-<li><a href="#flickviewer" id="flickviewer">Flick viewer</a>
+<li><a href="#errorviewer" id="errorviewer" class="viewers">Error viewer</a>
+<li><a href="#flickviewer" id="flickviewer" class="viewers">Flick viewer</a>
+<li><a href="#flickviewsviewer" id="flickviewsviewer" class="viewers">Flick views viewer</a>
 <li><a href="#userviewer" id="userviewer">User viewer</a>
+<li><a href="#ffmpegAvailableFormats" id="ffmpegAvailableFormats" title="FFmpeg formats supported by your installation (ignores Limit)" class="viewers">FFmpeg formats</a>
+<li><a href="#ffmpegAvailableCodecs" id="ffmpegAvailableCodecs" title="FFmpeg codecs supported by your installation (ignores Limit)" class="viewers">FFmpeg codecs</a>
+<li><a href="./doc" id="techDocs">Tech docs</a>
+<li><a href="./" id="home">i-flicks</a>
 </ul>
+<label for="search">Filter </label>
+<input type="text" id="search" placeholder="Enter text the click above" />
+<label for="limit">Limit </label>
+<select id="limit">
+	<option value="10">10</option>
+	<option value="20">20</option>
+	<option value="50">50</option>
+	<option value="100">100</option>
+	<option value="200">200</option>
+	<option value="1000000">All</option>
+</select>
+
 <div id="message"></div>
 
 <table id="list" class="hide">

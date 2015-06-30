@@ -1,12 +1,11 @@
+syntax: glob
+.git/**
 .hg/**
-.hgignore
 node_modules/**
 uploads/**
-doc/**
+settings.js
 iflicksdb
 errorsdb
 usersdb
 sessiondb
-iflicksflickUserdb
-iflicksviewdb
 npm-debug.log

@@ -1,4 +1,4 @@
-// Error code B03
+// Error code F06
 
 var crypto = require('crypto');
 var bcrypt = require('bcrypt');
@@ -27,12 +27,12 @@ function getUser(req, username, password, userId, includeDisabled, callback) {
                 req.statsD.timing('db.getUser', dbStartTime);
             }
             if (err) {
-                logger.error(req, 'user.getuser.1', 'B06002', err);
-                err.message = err.message + '. Code:B06002.';
+                logger.error(req, 'user.getuser.1', 'F06002', err);
+                err.message = err.message + '. Code:F06002.';
                 callback(err, undefined);
             } else if (result === null || result === 0) { // this looks exactly the same as a failed password intentionally.
-                err = new Error('Unrecognised user ID, username or password.  Code:B06003_');
-                err.code = 'B06003';
+                err = new Error('Unrecognised user ID, username or password.  Code:F06003_');
+                err.code = 'F06003';
                 callback(err, undefined);
             } else if (userId !== undefined) {
                 user = {};
@@ -40,7 +40,7 @@ function getUser(req, username, password, userId, includeDisabled, callback) {
                 user.username = result.username;
                 user.forename = result.forename;
                 user.surname = result.surname;
-                user.emailAddress = result.emailaddress;
+                user.emailAddress = result.emailAddress;
                 user.isSysAdmin = result.isSysAdmin;
                 user.aesKey = result.aeskey;
                 user.enabled = result.enabled;
@@ -51,8 +51,8 @@ function getUser(req, username, password, userId, includeDisabled, callback) {
             } else {
                 bcrypt.compare(password, result.password, function (err, res) {
                     if (err) {
-                        logger.error(req, 'user.getuser.3', 'B06007', err);
-                        err.message = err.message + '. Code:B06007.';
+                        logger.error(req, 'user.getuser.3', 'F06007', err);
+                        err.message = err.message + '. Code:F06007.';
                         callback(err, undefined);
                     }
                     if (res === true) {
@@ -69,9 +69,9 @@ function getUser(req, username, password, userId, includeDisabled, callback) {
 
                         callback(undefined, user);
                     } else { // bcrypt match failed
-                        logger.error(req, 'user.getuser.4', 'B06008', err);
+                        logger.error(req, 'user.getuser.4', 'F06008', err);
                         err = {};
-                        err.message = 'Unrecognised user ID, username or password.  Code:B06008';
+                        err.message = 'Unrecognised user ID, username or password.  Code:F06008';
                         callback(err, undefined);
                     }
                 });
@@ -91,8 +91,8 @@ function checkUserExists(username, callback) {
             req.statsD.timing('db.getCheckUserExists', dbStartTime);
         }
         if (err) {
-            logger.error(req, 'user.getCheckUserExists.1', 'B06027', err);
-            err.message = err.message + '. Code:B06027.';
+            logger.error(req, 'user.getCheckUserExists.1', 'F06027', err);
+            err.message = err.message + '. Code:F06027.';
             callback(err, undefined);
         }
         if (result.length > 0) {
@@ -131,8 +131,8 @@ function updateUserPassword(user, callback) {
     bcrypt.genSalt(10, function (err, salt) {
         if (err) {
             user.errorCount++;
-            logger.error(user.req, 'user.updateUserPassword.1', 'B06009', err);
-            err.message = err.message + '. Code:B06009. ';
+            logger.error(user.req, 'user.updateUserPassword.1', 'F06009', err);
+            err.message = err.message + '. Code:F06009. ';
             callback(err, undefined);
             return;
         }
@@ -143,14 +143,13 @@ function updateUserPassword(user, callback) {
             }
             if (err) {
                 user.errorCount++;
-                logger.error(user.req, 'user.updateUserPassword.2', 'B06008', err);
-                err.message = err.message + '. Code:B06008. ';
+                logger.error(user.req, 'user.updateUserPassword.2', 'F06008', err);
+                err.message = err.message + '. Code:F06008. ';
                 callback(err, undefined);
                 return;
             }
 
             dbStartTime = new Date();
-            console.log(user.id);
             db.update({_id: user.id}, { $set: { password: passwordHash } }, function (err, result) {
                 try {
                     if (user.req.statsD) {
@@ -158,14 +157,14 @@ function updateUserPassword(user, callback) {
                     }
                     if (err) {
                         user.errorCount++;
-                        logger.error(user.req, 'user.updateUserPassword.3', 'B06004', err);
-                        err.message = err.message + '. Code:B06004. ';
+                        logger.error(user.req, 'user.updateUserPassword.3', 'F06004', err);
+                        err.message = err.message + '. Code:F06004. ';
                         callback(err, undefined);
                     } else if (result === 0) {
                         user.errorCount++;
                         delete user.password;
                         err = new Error('No rows updated.');
-                        logger.error(user.req, 'user.updateUserPassword.4', 'B060012', err);
+                        logger.error(user.req, 'user.updateUserPassword.4', 'F060012', err);
                         callback(err, undefined);
                     } else {
                         delete user.password;
@@ -174,7 +173,7 @@ function updateUserPassword(user, callback) {
 
                 } catch (errr) {
                     user.errorCount++;
-                    logger.error(user.req, 'user.updateUserPassword.5', 'B060013', errr);
+                    logger.error(user.req, 'user.updateUserPassword.5', 'F060013', errr);
                     callback(errr, undefined);
                 }
             });
@@ -209,14 +208,14 @@ function updateUser(user, callback) {
                 }
                 if (err) {
                     user.errorCount++;
-                    logger.error(user.req, 'user.updateUser.1', 'B06006', err);
+                    logger.error(user.req, 'user.updateUser.1', 'F06006', err);
                     user.changed = true; // as it back as it failed
-                    err.message = err.message + '. Code:B06006. ';
+                    err.message = err.message + '. Code:F06006. ';
                     callback(err, undefined);
                 } else if (result === 0) {
                     user.errorCount++;
                     err = new Error('No rows updated.');
-                    logger.error(user.req, 'user.updateUser.2', 'B060014', err);
+                    logger.error(user.req, 'user.updateUser.2', 'F060014', err);
                     callback(err, undefined);
                 } else {
                     callback(undefined, undefined);
@@ -224,7 +223,7 @@ function updateUser(user, callback) {
 
             } catch (errr) {
                 user.errorCount++;
-                logger.error(user.req, 'user.updateUser.3', 'B06015', errr);
+                logger.error(user.req, 'user.updateUser.3', 'F06015', errr);
                 callback(errr, null);
             }
         });
@@ -265,14 +264,14 @@ function insertUser(user, callback) {
             }
             if (err) {
                 user.errorCount++;
-                logger.error(user.req, 'user.insertUser.1', 'B06018', err);
+                logger.error(user.req, 'user.insertUser.1', 'F06018', err);
                 user.changed = true; // as it back as it failed
-                err.message = err.message + '. Code:B06018. ';
+                err.message = err.message + '. Code:F06018. ';
                 callback(err, undefined);
             } else if (result === undefined) {
                 user.errorCount++;
                 err = new Error('No rows inserted.');
-                logger.error(user.req, 'user.insertUser.2', 'B060019', err);
+                logger.error(user.req, 'user.insertUser.2', 'F060019', err);
                 callback(err, undefined);
             } else {
                 user.id = result._id;
@@ -280,7 +279,7 @@ function insertUser(user, callback) {
             }
         } catch (errr) {
             user.errorCount++;
-            logger.error(user.req, 'user.insertUser.3', 'B06020', errr);
+            logger.error(user.req, 'user.insertUser.3', 'F06020', errr);
             callback(errr, null);
         }
     });
@@ -307,20 +306,20 @@ function deleteUser(callback) {
             }
             if (err) {
                 user.errorCount++;
-                logger.error(user.req, 'user.deleteUser.1', 'B06022', err);
-                err.message = err.message + '. Code:B06022. ';
+                logger.error(user.req, 'user.deleteUser.1', 'F06022', err);
+                err.message = err.message + '. Code:F06022. ';
                 callback(err, undefined);
             } else if (result === 0) {
                 user.errorCount++;
                 err = new Error('No rows updated.');
-                logger.error(user.req, 'user.deleteUser.2', 'B06023', err);
+                logger.error(user.req, 'user.deleteUser.2', 'F06023', err);
                 callback(err, undefined);
             } else {
                 callback(undefined, result);
             }
         } catch (errr) {
             user.errorCount++;
-            logger.error(user.req, 'user.deleteUser.3', 'B06024', errr);
+            logger.error(user.req, 'user.deleteUser.3', 'F06024', errr);
             callback(errr, null);
         }
     });
@@ -343,14 +342,14 @@ function setDateLastActive(user) {
                 user.req.statsD.timing('db.setDateLastActive', dbStartTime);
             }
             if (err) {
-                logger.error(user.req, 'user.setDateLastActive.1', 'B06025', err);
-                err.message = err.message + '. Code:B06022. ';
+                logger.error(user.req, 'user.setDateLastActive.1', 'F06025', err);
+                err.message = err.message + '. Code:F06022. ';
             } else if (result === 0) {
                 err = new Error('No rows updated.');
-                logger.error(user.req, 'user.setDateLastActive.2', 'B06026', err);
+                logger.error(user.req, 'user.setDateLastActive.2', 'F06026', err);
             }
         } catch (errr) {
-            logger.error(user.req, 'user.setDateLastActive.3', 'B06026', errr);
+            logger.error(user.req, 'user.setDateLastActive.3', 'F06026', errr);
         }
     });
 }
@@ -373,7 +372,6 @@ function setOption(option, value, callback) {
     db.update({_id: user.id}, {
         $set: {  options: user.options }
     }, function (err, result) {
-        console.log(result);
         if (err) { callback(err); return; }
         if (!err && result !== 1) {
             err = new Error('Unexpected number of updates.');
@@ -386,7 +384,7 @@ function authenticate(username, password, callback) {
     var user = this;
     getUser(user.req, username, password, undefined, false, function (err, result) {
         if (err) {
-            logger.error(user.req, 'user.authenticate.1', 'B06016', err);
+            logger.error(user.req, 'user.authenticate.1', 'F06016', err);
             user.errorCount++;
             user.err = err;
         } else {
@@ -411,7 +409,7 @@ function load(userId, callback) {
     var user = this;
     getUser(user.req, undefined, undefined, userId, user.includeDisabled, function (err, result) {
         if (err) {
-            logger.error(user.req, 'user.load.1', 'B06017', err);
+            logger.error(user.req, 'user.load.1', 'F06017', err);
             user.errorCount++;
             user.err = err;
         } else {
