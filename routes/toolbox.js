@@ -89,6 +89,7 @@ router.get('/flickviewer/:limit/:search', function (req, res, next) {
     }
     flicks.listAllSearch(limit, search, function (err, flickList) {
         if (err) {  return next(err); }
+
         res.send(flickList);
     });
 });
@@ -114,7 +115,7 @@ router.get('/flickviewsviewer/:limit/:search', function (req, res, next) {
     }
     flicks.listAllViews(limit, search, function (err, flickList) {
         if (err) {  return next(err); }
-
+        flickList.reverse();
         res.send(flickList);
     });
 });

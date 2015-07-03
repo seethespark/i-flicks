@@ -74,7 +74,13 @@ flick.load = function (id, user, callback) {
                 statsD.timing('db.flick.load', dbStartTime);
             }
             if (err) { callback(err, undefined); return; }
-            if (doc === null) { callback(new Error('Missing flick.1'), undefined); return; }
+            if (doc === null) {
+                err = new  Error('Missing flick');
+                err.status = 401;
+                err.code = 'F04005';
+                callback(err, undefined); 
+                return;
+            }
             flick._id = doc._id;
             flick.userId = doc.userId || doc.uploader;
             flick.name = doc.name;

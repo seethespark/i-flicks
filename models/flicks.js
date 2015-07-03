@@ -99,6 +99,7 @@ flicks.list = function (page, limit, search, user, callback) {
 };
 
 flicks.listAll = function (callback) {
+    var dbStartTime = new Date();
     db.find({}, function (err, docs) {
         if (statsD) {
             statsD.timing('db.flicks.listAll', dbStartTime);

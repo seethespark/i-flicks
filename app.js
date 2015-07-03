@@ -39,6 +39,7 @@ module.exports = function ret(sett) {
     global.iflicks_settings.usersCanCreateAccount = sett.usersCanCreateAccount;
     global.iflicks_settings.css = sett.css || global.iflicks_settings.css;
     global.iflicks_settings.env = sett.env || process.env.NODE_ENV;
+    global.iflicks_settings.googleAnalyticsId = sett.googleAnalyticsId;
 
     var utils = require('./lib/utils');
     var runOnce = require('./lib/runOnce');
@@ -46,6 +47,7 @@ module.exports = function ret(sett) {
     var routes = require('./routes/index');
     var upload = require('./routes/upload');
     var toolbox = require('./routes/toolbox');
+    var script = require('./routes/script');
     var api = require('./routes/api');
 //    var User = require('./models/user');
     var security = require('./lib/security');
@@ -106,16 +108,19 @@ module.exports = function ret(sett) {
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(cookieParser());
     app.use('/doc', express.static(path.join(__dirname, 'doc')));
-    if (global.iflicks_settings.env === 'production') {
+    /*if (global.iflicks_settings.env === 'production') {
         app.use('/promise.js', express.static(path.join(__dirname, 'node_modules/promise-polyfill/Promise.min.js')));
         app.use('/video.js', express.static(path.join(__dirname, 'node_modules/video.js/dist/video-js/video.js')));
         app.use(morgan('common'));
     } else {
         app.use('/promise.js', express.static(path.join(__dirname, 'node_modules/promise-polyfill/Promise.js')));
         app.use('/video.js', express.static(path.join(__dirname, 'node_modules/video.js/dist/video-js/video.dev.js')));
-        app.use(morgan('dev'));
+        
     }
     app.use('/fetch.js', express.static(path.join(__dirname, 'node_modules/whatwg-fetch/fetch.js')));
+    app.use('/video-js.swf', express.static(path.join(__dirname, 'node_modules/video.js/dist/video-js/video-js.swf')));
+    */
+    app.use(morgan('dev'));
     if (sett.cssPath) {
         app.use('/css/index.css', express.static(sett.cssPath));
         app.use('/css/index.min.css', express.static(sett.cssPath));
@@ -143,6 +148,7 @@ module.exports = function ret(sett) {
         }
     }
     app.use('/login', security);
+    app.use('/script', script);
     app.use('/toolbox', security.ensureAuthenticated, toolbox);
     app.use('/api/*', security.basicAuth);
     app.use('/api', security.ensureAuthenticated, api);

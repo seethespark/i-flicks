@@ -16,7 +16,16 @@ router.put('/:filename',
             return path.join(global.iflicks_settings.uploadPath, '/notencoded/');
         },
         onError: function (err, next) { err.code = 'F04001'; next(err); },
+        onFileUploadStart: function (file, req, res) {
+        /*console.log(req.body);
+            }*/
+        },
         onFileUploadComplete: function (file, req, res) {
+            if (req.body.name === undefined || req.body.name === '') {
+                res.status(500).send('Error: Name must be supplied.');
+                res.end();
+                return;
+            }
             var doc, storageName;
             storageName = file.name.substring(0, file.name.lastIndexOf('.'));
 
@@ -40,7 +49,14 @@ router.put('/:filename',
         }
     }),
     function (req, res, next) {
-        res.status(202).send('Received and now encoding.');
+        //console.log(req.body);
+        if (Object.keys(req.files).length === 0) {
+            res.status(500).send('Error: No file received.');
+        } else if (req.body.name === undefined || req.body.name === '') {
+            res.status(500).send('Error: Name must be supplied.');
+        } else {
+            res.status(202).send('Received and now encoding.');
+        }
     });
 
 module.exports = router;

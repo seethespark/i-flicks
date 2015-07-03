@@ -91,6 +91,7 @@ module.exports = function (grunt) {
     // Run tests
     grunt.registerTask('test', ['mochaTest']);
 
+
     // Default tasks
     //grunt.registerTask('default', ['concurrent:start']);
     grunt.registerTask('default', ['jshint', 'mochaTest', 'uglify', 'cssmin', 'jsdoc']);

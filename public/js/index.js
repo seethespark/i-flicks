@@ -5,8 +5,11 @@ window.iflicks = (function iflicks(settings) {
     var vidTimeTicks = 0, intervalCheckEncoded, newVideoEvents, vjs, newVideoCount, previousDisplayedPage,
         currentVideoDetail, currentOrientation, user = {}, videoListMaster = [], messages = [], loadingImage = new Image();
     settings.videoListPageLength = settings.videoListPageLength || 10;
-    loadingImage.src = 'img/loading.gif';
+    loadingImage.src = '/img/loading.gif';
     currentOrientation = window.orientation;
+
+   /* var console = {};
+    console.log = function() {};*/
 
     user.options = {};
 
@@ -17,6 +20,10 @@ window.iflicks = (function iflicks(settings) {
             walkTheDom(node, f);
             node = node.nextSibling;
         }
+    }
+
+    function get(id) {
+        return document.getElementById(id);
     }
 
     function addListener(element, eventType, track, callback) {
@@ -45,7 +52,7 @@ window.iflicks = (function iflicks(settings) {
     /** Send errors to the server */
     function sendError(message, location) {
         var error = {message: message, location: location};
-        window.fetch('error', {
+        window.fetch('/error', {
             credentials: 'include',
             method: 'POST',
             headers: {
@@ -68,8 +75,8 @@ window.iflicks = (function iflicks(settings) {
         if (typeof message === 'object' && message.message !== undefined) { /// an error object was passed in.
             message = message.message;
         }
-        if (message !== undefined) {
-            console.log((new Date()).toUTCString() + ' :: ' + location + ' :: ' + message);
+        if (message !== undefined && window.console !== undefined) {
+            window.console.log((new Date()).toUTCString() + ' :: ' + location + ' :: ' + message);
         }
         if (message) {
             timeout = Date.now() + (timeout * 1000);
@@ -86,7 +93,9 @@ window.iflicks = (function iflicks(settings) {
                 br = document.createElement('br');
                 frag.appendChild(msg);
                 frag.appendChild(br);
-                if (err.timeout < minTimeout) { minTimeout = err.timeout; }
+                if (err.timeout < minTimeout) {
+                    minTimeout = err.timeout;
+                }
             }
         });
         messageElements = document.getElementsByClassName('message');
@@ -144,9 +153,10 @@ window.iflicks = (function iflicks(settings) {
     }
 
     function setOption(option, value) {
+        if (Object.getOwnPropertyNames(user).length < 2) { return; }
         var o = {};
         o[option] = value;
-        window.fetch('option', {
+        window.fetch('/option', {
             credentials: 'include',
             method: 'POST',
             headers: {
@@ -168,7 +178,7 @@ window.iflicks = (function iflicks(settings) {
         if (time > video.fileDetail.duration - 5) {
             time = 0;
         }
-        window.fetch('timeupdate/' + video._id + '/' + time, {
+        window.fetch('/timeupdate/' + video._id + '/' + time, {
             credentials: 'include',
             method: 'POST',
             headers: {
@@ -256,21 +266,25 @@ window.iflicks = (function iflicks(settings) {
         for (i = 0; i < elList.length; i++) {
             imageData.append(elList[i].name, elList[i].value);
         }
-        window.fetch('upload/aa', {
+        window.fetch('/upload/aa', {
             method: 'PUT',
             credentials: 'include',
             body: imageData
         })
             .then(function (res) { return res.text(); })
             .then(function (txt) {
-                document.getElementById('uploadForm').reset();
-                showMessage(txt, 'uploadFile.msg', 5);
+                if (txt.substring(0, 5) === 'Error') {
+                    showMessage(txt, 'uploadFile.error', 7);
+                } else {
+                    document.getElementById('uploadForm').reset();
+                    showMessage(txt, 'uploadFile.msg', 5);
+                }
             })
             .catch(function (ex) { showMessage(ex, 'uploadFile', 10); });
     }
 
     /// Handler for the then videos are clicked
-    function playVideo(vid) {
+    function showVideo(vid) {
         var opts, i, vidDims, vidDetailElement, videoText, videoContainer, editData,
             vidPublicElement, vidPublicCheck, vidDirectLinkElement, vidDirectLinkCheck;
         document.getElementById('videoList').classList.add('hide');
@@ -308,7 +322,7 @@ window.iflicks = (function iflicks(settings) {
                     directLink: document.getElementById('videoDirectLinkCheck').checked
                 };
                 btn.value = 'Edit';
-                window.fetch('editvideo', {
+                window.fetch('/editvideo', {
                     method: 'POST',
                     credentials: 'include',
                     body: JSON.stringify(editData),
@@ -322,12 +336,12 @@ window.iflicks = (function iflicks(settings) {
                     })
                     .then(function (json) {
                         if (json.All !== 'OK') {
-                            showMessage(json.error, 'playVideo.btnEditClick.save', 10);
+                            showMessage(json.error, 'showVideo.btnEditClick.save', 10);
                         }
                     })
                     .catch(function (ex) {
                         console.log('Error');
-                        showMessage(ex, 'playVideo.btnEditClick.save.1', 10);
+                        showMessage(ex, 'showVideo.btnEditClick.save.1', 10);
                     });
             }
         }
@@ -361,7 +375,7 @@ window.iflicks = (function iflicks(settings) {
                 }
             });
 
-            window.fetch('copy', {
+            window.fetch('/copy', {
                 method: 'POST',
                 credentials: 'include',
                 body: JSON.stringify(body),
@@ -375,15 +389,15 @@ window.iflicks = (function iflicks(settings) {
                 })
                 .then(function (json) {
                     if (json.All !== 'OK') {
-                        showMessage(json.error, 'playVideo.copyFlickClick', 10);
+                        showMessage(json.error, 'showVideo.copyFlickClick', 10);
                     } else {
-                        showMessage('Received at destination', 'playVideo.copyFlickClick', 5);
+                        showMessage('Received at destination', 'showVideo.copyFlickClick', 5);
                         document.getElementById('copyFlickPanel').classList.add('hide');
                     }
                 })
                 .catch(function (ex) {
                     console.log('Error');
-                    showMessage(ex, 'playVideo.copyFlickClick.1', 10);
+                    showMessage(ex, 'showVideo.copyFlickClick.1', 10);
                 });
         }
         function copyFlick(vid) {
@@ -441,7 +455,7 @@ window.iflicks = (function iflicks(settings) {
 
             addListener(container, 'click', true, function (ev) {
                 var newRating = ev.target.id.split('_')[1];
-                window.fetch('rating/' + videoId + '/' + newRating, {
+                window.fetch('/rating/' + videoId + '/' + newRating, {
                     credentials: 'include',
                     method: 'POST',
                     headers: {
@@ -454,9 +468,8 @@ window.iflicks = (function iflicks(settings) {
                     })
                     .then(function (json) {
                         if (json.All !== 'OK') {
-                            showMessage(json.error, 'playVideo.rating.save', 7);
+                            showMessage(json.error, 'showVideo.rating.save', 7);
                         }
-                        console.log(ev.target.parentNode);
                         var tmpNode = ev.target.parentNode.parentNode.parentNode;
                         tmpNode.removeChild(ev.target.parentNode.parentNode);
                         tmpNode.appendChild(rating(videoId, newRating));
@@ -476,10 +489,10 @@ window.iflicks = (function iflicks(settings) {
                 vidDims = getViewerDimensions(800, 600);
             }
 
-            videoContainer.innerHTML = '<video id="video" poster="thumb/' + vid + '/' + vidDims.src + '" data-setup="{}"  class="video-js vjs-default-skin" >' +
-                    '<source src="video/' + vid + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() + '" type="video/mp4"></source>' +
-                    '<source src="video/' + vid + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() + '" type="video/webm"></source>' +
-                    '<source src="video/' + vid + '/' + vidDims.src + '.ogv?r=' + (new Date()).getTime() + '" type="video/ogg"></source>' +
+            videoContainer.innerHTML = '<video id="video" poster="/thumb/' + vid + '/' + vidDims.src + '" data-setup="{}"  class="video-js vjs-default-skin" >' +
+                    '<source src="/video/' + vid + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() + '" type="video/mp4"></source>' +
+                    '<source src="/video/' + vid + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() + '" type="video/webm"></source>' +
+                    '<source src="/video/' + vid + '/' + vidDims.src + '.ogv?r=' + (new Date()).getTime() + '" type="video/ogg"></source>' +
                     '</video>' +
                     '<div ></div>';
             opts = {
@@ -493,9 +506,9 @@ window.iflicks = (function iflicks(settings) {
             if (currentVideoDetail.currentTime) {
                 vjs.currentTime(currentVideoDetail.currentTime);
             }
-            vjs.on('error', function (err) { showMessage(err.message, 'playVideo.setVideoDetail.vjs.error', 10); });
+            vjs.on('error', function (err) { showMessage(err.message, 'showVideo.setVideoDetail.vjs.error', 10); });
             vjs.one('play', function () {
-                window.fetch('playVideo/' + vid, {
+                window.fetch('/playVideo/' + vid, {
                     credentials: 'include',
                     method: 'POST',
                     headers: {
@@ -580,7 +593,7 @@ window.iflicks = (function iflicks(settings) {
         if (currentVideoDetail) {
             setVideoDetail();
         } else {
-            window.fetch('videodetail/' + vid, {
+            window.fetch('/videodetail/' + vid, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -592,7 +605,7 @@ window.iflicks = (function iflicks(settings) {
                 })
                 .then(function (json) {
                     if (json.error) {
-                        showMessage(json.error, 'playVideo.fetchVideoDetail', 10);
+                        showMessage(json.error, 'showVideo.fetchVideoDetail', 10);
                     } else {
                         currentVideoDetail = json;
                         setVideoDetail();
@@ -600,10 +613,17 @@ window.iflicks = (function iflicks(settings) {
                 })
                 .catch(function (ex) {
                     console.log('Error');
-                    showMessage(ex.message, 'playVideo.fetchVideoDetail1', 10);
+                    showMessage(ex.message, 'showVideo.fetchVideoDetail1', 10);
                 });
         }
     }
+
+    function showVideoOnLoad(vid) {
+
+        window.history.replaceState({method: 'showVideo', vid: vid}, 'Play video', window.location.href );
+        showVideo(vid);
+    }
+                
 
     /// Print the video list tothe browser.
     function listVideosShow(vids) {
@@ -636,17 +656,16 @@ window.iflicks = (function iflicks(settings) {
             vidContainer.className = 'vidContainer';
             vidContent.className = 'vidContent';
             //vidLoadingThumb.className = 'vidLoadingThumb';
-            vidLoadingThumb.className = 'fa fa-spinner fa-pulse fa-5x';
+            vidLoadingThumb.className = 'vidLoadingThumb fa fa-spinner fa-pulse fa-5x';
             vidThumbContainer.className = 'vidThumbContainer hide1';
             vidThumb.className = 'vidThumb';
             vidFooter.className = 'vidFooter';
             vidName.className = 'vidName';
             vidDelete.className = 'fa fa-trash-o vidDelete';
             //vidLoadingThumb.src = loadingImage.src;
-            vidThumb.src = 'thumb/' + vid._id + '/thumb';
-            addListener(vidThumb, 'error', false, function () { vidThumb.src = 'img/missing.png'; });
-            //vidThumb.addEventListener('error', );
-            addListener(vidThumb, 'load', true, function () {
+            vidThumb.src = '/thumb/' + vid._id + '/thumb';
+            addListener(vidThumb, 'error', false, function () { vidThumb.src = '/img/missing.png'; });
+            addListener(vidThumb, 'load', false, function () {
             //vidThumb.addEventListener('load', 
                 // Unhide the loaded image (slowly) and then remove the placeholder.
                 vidThumbContainer.classList.remove('hide1');
@@ -675,15 +694,17 @@ window.iflicks = (function iflicks(settings) {
             vidFrag.appendChild(vidContainer);
 
             function vidContainerClick() {
-                var currentState = window.history.state || {};
+                var vidName, currentState = window.history.state || {};
+                vidName = vid.name || '-';
+                vidName = vidName.replace(' ', '_');
                 currentState.method = 'listVideos';
                 currentState.scrollTop = document.body.scrollTop;
                 currentState.page = vid.page;
                 currentState.limit = vid.limit;
                 currentState.search = vid.search;
                 window.history.replaceState(currentState, 'List video', '');
-                window.history.pushState({method: 'playVideo', vid: vid._id}, 'Play video', '/' + vid._id);
-                playVideo(vid._id);
+                window.history.pushState({method: 'showVideo', vid: vid._id}, 'Show video', '/' + vidName + '/' + vid._id);
+                showVideo(vid._id);
             }
             if (vid.encoded === true) {
                 /*addListener(vidContainer, 'click', true, 
@@ -696,8 +717,8 @@ window.iflicks = (function iflicks(settings) {
                         currentState.limit = vid.limit;
                         currentState.search = vid.search;
                         window.history.replaceState(currentState, 'List video', '');
-                        window.history.pushState({method: 'playVideo', vid: vid._id}, 'Play video', '/' + vid._id);
-                        playVideo(vid._id);
+                        window.history.pushState({method: 'showVideo', vid: vid._id}, 'Play video', '/' + vid._id);
+                        showVideo(vid._id);
                 });*/
                 var longPress;
                 addListener(vidContainer, 'mousedown', true, function (ev) {
@@ -800,7 +821,7 @@ window.iflicks = (function iflicks(settings) {
                 listVideosShow(videoListMaster);
             }
         } else {
-            window.fetch('videolist/' + page + '/' + limit + '/' + search, {
+            window.fetch('/videolist/' + page + '/' + limit + '/' + search, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -827,7 +848,7 @@ window.iflicks = (function iflicks(settings) {
     function watchForNewVideos() {
         /// Check the browser supports EventSource.  If it's IE then the user has to refresh manually.
         if (window.EventSource !== undefined) {
-            newVideoEvents = new window.EventSource('newvideo');
+            newVideoEvents = new window.EventSource('/newvideo');
             addListener(newVideoEvents, 'newVideo', false, function () {
             //newVideoEvents.addEventListener('newVideo',  function () {
                 var pop = document.createElement('div');
@@ -837,7 +858,7 @@ window.iflicks = (function iflicks(settings) {
 
                 addListener(pop, 'click', true, function () {
                 //pop.addEventListener('click', function () {
-                    window.history.pushState({method: 'listVideos', vid: vid._id}, 'List video', '/');
+                    window.history.pushState({method: 'listVideos'}, 'List video', '/');
                     listVideos(0, settings.videoListPageLength);
                 });
 
@@ -865,7 +886,7 @@ window.iflicks = (function iflicks(settings) {
             videojs(video).dispose();
         }
         function getUnencoded() {
-            window.fetch('videolistunencoded/' + page + '/' + limit, {
+            window.fetch('/videolistunencoded/' + page + '/' + limit, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -892,7 +913,7 @@ window.iflicks = (function iflicks(settings) {
     }
 
     function deleteVideo(vid) {
-        window.fetch('video/' + vid, {
+        window.fetch('/video/' + vid, {
             credentials: 'include',
             method: 'DELETE'
         })
@@ -902,7 +923,7 @@ window.iflicks = (function iflicks(settings) {
     }
 
     function unDeleteVideo(vid) {
-        window.fetch('undelete/' + vid, {
+        window.fetch('/undelete/' + vid, {
             credentials: 'include',
             method: 'POST'
         })
@@ -1008,14 +1029,18 @@ window.iflicks = (function iflicks(settings) {
 
             document.getElementById('loggedinContainer').style.display = 'inline-block';
             document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('showUploadContainer').style.display = 'inline-block';
             document.getElementById('headerBarUserName').textContent  = 'Hello ' + user.forename;
             document.getElementById('message').textContent  = '';
             listVideosShow(videoListMaster);
+            /// Dopn't show the upload button in <=IE9
+            if (window.FormData === undefined) {
+                document.getElementById('showUploadContainer').style.display = 'none';
+            }
+            
         }
     }
     function login() {
-        window.fetch('login', {
+        window.fetch('/login', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1045,7 +1070,7 @@ window.iflicks = (function iflicks(settings) {
             });
     }
     function loginCheck() {
-        window.fetch('login', {
+        window.fetch('/login', {
             method: 'GET',
             credentials: 'include', // or same-origin
             headers: {
@@ -1077,7 +1102,7 @@ window.iflicks = (function iflicks(settings) {
         document.getElementById('message').textContent  = '';
         document.getElementById('headerBarUserName').textContent  = '';
 
-        window.fetch('login', {
+        window.fetch('/login', {
             method: 'DELETE',
             credentials: 'include',
             headers: {
@@ -1103,7 +1128,7 @@ window.iflicks = (function iflicks(settings) {
             }
         };
         startTime = (new Date()).getTime();
-        download.src = 'img/random.jpg?n=' + startTime;
+        download.src = '/img/random.jpg?n=' + startTime;
     }
 
     /// Check to see if the browser supports HTML5 vieo, returns boolean
@@ -1112,9 +1137,22 @@ window.iflicks = (function iflicks(settings) {
     }
     /// Checks the browser is suported and then runs the callback.
     function checkFeatures(callback) {
-        if (window.FormData === undefined || supportsVideo() !== true) {
+        /*if (window.FormData === undefined || supportsVideo() !== true) {
             document.getElementById('body').innerHTML = '<p>Your browser is not supported.  i-flicks is supported by all modern browsers.  It doesn\'t work on old versions of Internet Explorer or old mobile browsers.</p>';
             return;
+        }*/
+
+        /// IE9 check. It just crashes badly in IE8 and below.
+        if (window.FormData === undefined) {
+            var d = document.createElement('div');
+            d.style.position = 'fixed';
+            d.style.top = '0px';
+            d.style.width = '100%';
+            d.style.backgroundColor = '#FFFF99';
+            d.innerText = 'Some features will not work in your browser version. i-flicks works in all modern browsers.  '+
+                'It doesn\'t work on old versions of Internet Explorer or very old mobile browsers.';
+
+            document.getElementById('body').appendChild(d);
         }
         callback();
     }
@@ -1123,81 +1161,35 @@ window.iflicks = (function iflicks(settings) {
     function start() {
         checkFeatures(function () {
             addListener('submitUploadNewVideo', 'click', true, uploadFile);
-            //document.getElementById('submitUploadNewVideo').addEventListener('click', uploadFile);
-            ///document.getElementById('videoFile').onchange = previewFile; // Works but hits processor ans so UI.
             addListener('submitLogin', 'click', true, login);
-            //document.getElementById('submitLogin').addEventListener('click', login);
             addListener('submitLogout', 'click', true, logout);
-            //document.getElementById('submitLogout').addEventListener('click', logout);
 
             addListener('closeInfoPanel', 'click', true, closeInfoPanel);
-            /*infoPanel = document.getElementById('closeInfoPanel');
-            if (infoPanel) {
-                document.getElementById('closeInfoPanel').addEventListener('click', closeInfoPanel);
-            }*/
             addListener('submitCookieAccept', 'click', true, cookieAccept);
-            /*cookieApt = document.getElementById('submitCookieAccept');
-            if (cookieApt) {
-                cookieApt.addEventListener('click', cookieAccept);
-            }*/
             addListener('showUploadContainer', 'click', true, showUploadContainer);
-            //document.getElementById('showUploadContainer').addEventListener('click', showUploadContainer);
-
             addListener('showCreateAccount', 'click', true, showCreateAccount);
             addListener('submitCreateAccount', 'click', true, addUserHandler);
-
-            /*showCreateAcc = document.getElementById('showCreateAccount');
-            if (showCreateAcc) {
-                showCreateAcc.addEventListener('click', showCreateAccount);
-                document.getElementById('submitCreateAccount').addEventListener('click', addUserHandler);
-            }*/
-
             addListener('showVideoList', 'click', true, function () {
-                //window.history.replaceState(currentState, 'Show video', '');
-                window.history.pushState({method: 'listVideos', vid: vid._id}, 'List video', '/');
+                window.history.pushState({method: 'listVideos'}, 'List video', '/');
                 listVideos(0, settings.videoListPageLength);
             });
-            /*document.getElementById('showVideoList').addEventListener('click', function () {
-                //window.history.replaceState(currentState, 'Show video', '');
-                window.history.pushState({method: 'listVideos', vid: vid._id}, 'List video', '/');
-                listVideos(0, settings.videoListPageLength);
-            });*/
             addListener('showUnencodedVideoList', 'click', true, function () {
-                //window.history.replaceState(currentState, 'Show video', '');
                 window.history.pushState({method: 'listUnencoded'}, 'List unencoded videos', '/');
                 listUnencoded(0, settings.videoListPageLength);
             });
-            /*document.getElementById('showUnencodedVideoList').addEventListener('click', function () {
-                //window.history.replaceState(currentState, 'Show video', '');
-                window.history.pushState({method: 'listUnencoded'}, 'List unencoded videos', '/');
-                listUnencoded(0, settings.videoListPageLength);
-            });*/
-
             /// forward and back button handler.
             addListener(window, 'popstate', true, function (event) {
-                console.log('POPSTATE: ' + event.state.method);
-                if (event.state.method === 'playVideo') {
-                    playVideo(event.state.vid);
+                //console.log(event.state);
+                if (event.state.method === 'showVideo') {
+                    showVideo(event.state.vid);
                 } else if (event.state.method === 'listVideos') {
                     listVideos(event.state.page, event.state.limit, event.state.search);
                     if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
                         window.scroll(event.state.scrollTop, 0);
                     }
                 }
-                //updateContent(event.state);
             });
-            /*window.addEventListener('popstate', function (event) {
-                console.log(event.state.method);
-                if (event.state.method === 'playVideo') {
-                    playVideo(event.state.vid);
-                } else if (event.state.method === 'listVideos') {
-                    listVideos(event.state.page, event.state.limit, event.state.search);
-                    if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
-                        window.scroll(event.state.scrollTop, 0);
-                    }
-                }
-                //updateContent(event.state);
-            });*/
+            /// handle rotation on mobile devices
             addListener(window, 'resize', true, function () {
                 var vidDims, currentTime, isPaused;
                 if (currentVideoDetail !== undefined && currentVideoDetail.fileDetail && currentVideoDetail.fileDetail.width && currentOrientation !== window.orientation) {
@@ -1213,8 +1205,6 @@ window.iflicks = (function iflicks(settings) {
                     if (!isPaused) {
                         vjs.play();
                     }
-               // showMessage(vidDims.videoWidth + ' -- ' + vidDims.videoHeight, 'window.resize', 3);
-               // showMessage(vidDims.viewportWidth + ' == ' + vidDims.viewportHeight, 'window.resize', 3);
                 }
             });
             loginCheck();
@@ -1234,6 +1224,6 @@ window.iflicks = (function iflicks(settings) {
     start();
 
     return {
-        playVideo: playVideo
+        showVideoOnLoad: showVideoOnLoad
     };
 }({}));

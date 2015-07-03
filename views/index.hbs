@@ -1,76 +1,112 @@
-<div id="headerBar">
-	<a href="/" name="Home">
-		<div id="logo">
-			<img id="logoImage" src="img/logo.png" alt="i-flicks logo">
-			<span id="logoText">I-FLICKS</span>
-		</div>
-	</a>
-	<span id="message" class="message"></span>
-	<span id="headerBarUserName"></span>
-	<span id="loggedinContainer">
-		<input type="button" id="submitLogout" value="Logout" class="button">
-		<input type="button" id="showUploadContainer" value="Upload" class="button">
-		<input type="button" id="showUnencodedVideoList" value="Unencoded" class="button">
-	</span>
-	<span id="loginContainer">
-		<span id="loginTextInputs">
-			<label for="fileName">Username: </label><input type="text" id="username" name="username">
-			<label for="fileName">Password: </label><input type="text" id="password" class="">
-		</span>
-		<input type="button" id="submitLogin" value="Logon" class="button">
-		{{#if usersCanCreateAccount }}
-		<input type="button" id="showCreateAccount" value="Create account" class="button">
-		{{/if}}
-	</span>
-	<input type="button" id="showVideoList" value="List videos." class="button">
-</div>
-{{#if showInfo}}
-<div id="infoContainer">
-	<div id="info">{{{info}}}<div id="closeInfoPanel" title="hide info panel">X</div></div>
-</div>
-{{/if}}
-<div id="uploadContainer" class="hide">
-	<form id="uploadForm">
-		<label for="fileName">Name:</label><input type="text" id="fileName" name="name" class="uploadContainer">
-		<br>
-		<label for="fileDescription">Description:</label><textarea id="fileDescription" name="description"  class="uploadContainer"></textarea>
-		<br><br><br>
-		<label for="tags">Tags (comma seperate):</label><input type="text" id="fileTags" name="tags" class="uploadContainer">
-		<br>
-		<label for="emailWhenEncoded">Email when complete:</label><input type="checkbox" id="emailWhenEncoded" name="emailComplete" class="uploadContainer">
-		<br>
-		<!--<label for="videoFile">File to upload
-			<div id="uploadContainerFile">Select file
-			   <input type="file" name="video"  id="videoFile" />
+	<div id="headerBar">
+		<a href="/" name="Home">
+			<div id="logo">
+				<img id="logoImage" src="/img/logo.png" width="80" height="60" alt="i-flicks logo">
+				<span id="logoText">I-FLICKS</span>
 			</div>
-		</label>
-		-->
-		<label for="videoFile">File to upload</label><input type="file" name="video" id="videoFile" class="uploadContainer"> 
-		<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
-		<video id="thumbVid" src="/" class="hide" width="70" height="40" controls>
-		</video>
+		</a>
+		<span id="message" class="message"></span>
+		<span id="headerBarUserName"></span>
+		<span id="loggedinContainer">
+			<input type="button" id="submitLogout" value="Logout" class="button">
+			<input type="button" id="showUploadContainer" value="Upload" class="button">
+			<input type="button" id="showUnencodedVideoList" value="Unencoded" class="button">
+		</span>
+		<span id="loginContainer">
+			<span id="loginTextInputs">
+				<label for="fileName">Username: </label><input type="text" id="username" name="username">
+				<label for="fileName">Password: </label><input type="text" id="password" class="">
+			</span>
+			<input type="button" id="submitLogin" value="Logon" class="button">
+			{{#if usersCanCreateAccount }}
+			<input type="button" id="showCreateAccount" value="Create account" class="button">
+			{{/if}}
+		</span>
+		<input type="button" id="showVideoList" value="List videos." class="button">
+	</div>
+	{{#if showInfo}}
+	<div id="infoContainer">
+		<div id="info">{{{info}}}<div id="closeInfoPanel" title="hide info panel">X</div></div>
+	</div>
+	{{/if}}
+	<div id="uploadContainer" class="hide">
+		<form id="uploadForm">
+			<label for="fileName">Name:</label><input type="text" id="fileName" name="name" class="uploadContainer">
+			<br>
+			<label for="fileDescription">Description:</label><textarea id="fileDescription" name="description"  class="uploadContainer"></textarea>
+			<br><br><br>
+			<label for="tags">Tags (comma seperate):</label><input type="text" id="fileTags" name="tags" class="uploadContainer">
+			<br>
+			<label for="emailWhenEncoded">Email when complete:</label><input type="checkbox" id="emailWhenEncoded" name="emailComplete" class="uploadContainer">
+			<br>
+			<!--<label for="videoFile">File to upload
+				<div id="uploadContainerFile">Select file
+				   <input type="file" name="video"  id="videoFile" />
+				</div>
+			</label>
+			-->
+			<label for="videoFile">File to upload</label><input type="file" name="video" id="videoFile" class="uploadContainer"> 
+			<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
+			<video id="thumbVid" src="/" class="hide" width="70" height="40" controls>
+			</video>
+			<br>
+			<input type="button" id="submitUploadNewVideo" value="Send" class="button">
+			<span id="messageUploadVid" class="message"></span>
+		</form>
+	</div>
+	{{#if usersCanCreateAccount }}
+	<div id="createAccountContainer" class="hide">
+		<label for="username">Username:</label><input type="text" id="createUsername" name="username" class="createAccountContainer">
 		<br>
-		<input type="button" id="submitUploadNewVideo" value="Send" class="button">
-		<span id="messageUploadVid" class="message"></span>
-	</form>
-</div>
-{{#if usersCanCreateAccount }}
-<div id="createAccountContainer" class="hide">
-	<label for="username">Username:</label><input type="text" id="createUsername" name="username" class="createAccountContainer">
-	<br>
-	<label for="createFirstname">First Name:</label><input type="text" id="createFirstname" name="firstname"  class="createAccountContainer">
-	<br>
-	<label for="createLastname">Last name:</label><input type="text" id="createLastname" name="lastname"  class="createAccountContainer">
-	<br>
-	<label for="createEmail">Email:</label><input type="text" id="createEmail" name="emailAddress"  class="createAccountContainer">
-	<br>
-	<label for="createPassword">Password:</label><input type="text" id="createPassword" name="password"  class="createAccountContainer">
-	<br>
+		<label for="createFirstname">First Name:</label><input type="text" id="createFirstname" name="firstname"  class="createAccountContainer">
+		<br>
+		<label for="createLastname">Last name:</label><input type="text" id="createLastname" name="lastname"  class="createAccountContainer">
+		<br>
+		<label for="createEmail">Email:</label><input type="text" id="createEmail" name="emailAddress"  class="createAccountContainer">
+		<br>
+		<label for="createPassword">Password:</label><input type="text" id="createPassword" name="password"  class="createAccountContainer">
+		<br>
 
-	<input type="button" id="submitCreateAccount" value="Create" class="button">
-	<span id="messageCreateAcc" class="message"></span>
-</div>
-{{/if}}
-<div id="videoList"></div>
-<div id="videoListUnencoded"></div>
-<div id="videoContainer"></div>
+		<input type="button" id="submitCreateAccount" value="Create" class="button">
+		<span id="messageCreateAcc" class="message"></span>
+	</div>
+	{{/if}}
+	<div id="videoList"></div>
+	<div id="videoListUnencoded"></div>
+	<div id="videoContainer"></div>
+    <script>
+    var vid = '{{vid}}';
+    </script>
+    <script src="/js/modernizr.js"></script>
+    <script>
+    Modernizr.addTest('forEach', function() { return Array.forEach; });
+    Modernizr.addTest('fetch', function() { return window.fetch; });
+    Modernizr.addTest('promise', function() { return window.Promise; });
+    Modernizr.load([{
+      test: Modernizr.promise,
+      nope: '/script/promise.js'
+  	  },
+      {
+      test: Modernizr.History,
+      nope: '/script/history.js'
+      },
+      {
+      test: Modernizr.classlist,
+      nope: '/script/classlist.js'
+      },
+      {
+      test: Modernizr.fetch,
+      nope: '/script/fetch.js'
+      },
+      {load: ['/script/video.js', '/{{{js}}}'],
+      complete: function () {
+          videojs.options.flash.swf = '/script/video-js.swf';
+          if (vid !== '') {
+            //document.addEventListener('DOMContentLoaded', function() {
+              iflicks.showVideoOnLoad(vid);
+            //});
+          }
+        }
+      }
+    ]);
+    </script>

@@ -3,6 +3,7 @@
 node_modules/**
 uploads/**
 doc/**
+bin/**
 iflicksdb
 errorsdb
 usersdb
@@ -10,3 +11,4 @@ sessiondb
 iflicksflickUserdb
 iflicksviewdb
 npm-debug.log
+npmgo.bat

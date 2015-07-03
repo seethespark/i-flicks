@@ -8,11 +8,12 @@ var app = require('../app')({
   mailgunKey: 'key-aa3bcc54531f979ba37c1c26dce394fe',
   mailgunDomain: 'mg.seethespark.com',
   mailFrom: 'i-flicks@seethespark.com',
-  env: 'development', // development or production. 
-  css: 'index.css',
+  env: 'production', // development or production. 
+  css: 'white.css',
   sessionSecret: 'scrambledeggs',
   statsDServer: '192.168.0.25',
-  statsDPrefix: 'i-flicks-dev'
+  statsDPrefix: 'i-flicks-dev',
+  googleAnalyticsId: 'UA-39487715-3'
 });
 /*var app = require('../app')({
   mailgunKey: 'key-aa3bcc54531f979ba37c1c26dce394fe',

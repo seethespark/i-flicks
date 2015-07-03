@@ -19,6 +19,9 @@ a {
 	background: radial-gradient(ellipse at center,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%); /* W3C */
 	/*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=1 );*/ /* IE6-9 fallback on horizontal gradient */
 }
+#logoText {
+	color: black;
+}
 #info {
 	border: thin grey solid;
 }

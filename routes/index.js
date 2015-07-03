@@ -22,6 +22,17 @@ var logger = require('../lib/logger');
  * @module index
  */
 
+/** Set standard headers.  Just cach headers for now. */
+function setHeaders(res, contentType) {
+    var seconds = 14 * 24 * 3600;// 4 days
+    res.setHeader('Cache-Control', 'public, max-age=' + seconds); 
+    res.setHeader('Expires', new Date(Date.now() + (seconds * 1000)).toUTCString());
+
+    if (contentType) {
+        res.setHeader('Content-Type', contentType);
+    }
+}
+
 /** Present the home page */
 router.get('/', function (req, res, next) {
     var showInfo = false, info = '', settings, css, js, showCookieBanner = true;
@@ -48,6 +59,7 @@ router.get('/', function (req, res, next) {
             'material for which you don\'t have permission.  If you do it will be removed.</p>';
     }
     settings = JSON.stringify({ videoListPageLength: 10 });
+    setHeaders(res);
     res.render('index', { 
         title: 'i-Flicks',
         js: js,
@@ -55,7 +67,8 @@ router.get('/', function (req, res, next) {
         usersCanCreateAccount: global.iflicks_settings.usersCanCreateAccount,
         showCookieBanner: showCookieBanner,
         showInfo: showInfo,
-        info: info
+        info: info,
+        googleAnalyticsId: global.iflicks_settings.googleAnalyticsId
     });
 });
 
@@ -105,6 +118,7 @@ router.get('/thumb/:id/:fileName', function (req, res, next) {
     flick.thumb(req.params.id, req.params.fileName, req.user, function (err, thumbPath) {
         if (err) { err.code = 'F03002'; return next(err); }
         if (thumbPath === undefined) { err = new Error('Image missing (404)'); err.status = 404; return next(err); }
+        setHeaders(res);
         res.sendFile(thumbPath, {}, function (err) {
             if (err) {
                 err.code = 'F03003';
@@ -283,7 +297,6 @@ router.post('/editVideo', function (req, res, next) {
             flick.description = req.body.description;
             flick.public = req.body.public;
             flick.directLink = req.body.directLink;
-            console.log(req.body.directLink);
             flick.save(function (err) {
                 if (err) { err.code = 'F03010'; return next(err); }
                 res.setHeader('Content-Type', 'application/json');
@@ -455,6 +468,7 @@ router.get('/readme', function (req, res, next) {
           smartLists: true,
           smartypants: true
         */
+        setHeaders(res);
         res.render('readme', {layout: 'markdown', md: marked(data), title: 'i-flicks readme'});
     });
 });
@@ -467,6 +481,7 @@ router.get('/privacy', function (req, res, next) {
     if (global.iflicks_settings.env === 'production') {
         css = css.replace('.css', '.min.css');
     }
+    setHeaders(res);
     res.render('privacy', {title: 'i-flicks privacy and cookies'});
 });
 
@@ -474,16 +489,52 @@ router.get('/privacy', function (req, res, next) {
 * @param {string} vid - The _ID of the video.
 * 
 */
-router.get('/:vid', function (req, res, next) {
-    var js, css = global.iflicks_settings.css;
+/*router.get('/:vid', function (req, res, next) {
+    var js, showCookieBanner = true,  css = global.iflicks_settings.css;
     js = 'js/index.js';
     if (global.iflicks_settings.env === 'production') {
         css = css.replace('.css', '.min.css');
         js = js.replace('.js', '.min.js');
     }
-    res.render('index', { title: 'i-flicks', vid: req.params.vid, css: css, js: js });
+    /// Check the cookie consent cookie.  If this is ommitted the client will still check but the banner flashes on page load.
+    if (utils.getCookie(req.headers.cookie, 'cookieConsent') === 'true') {
+        showCookieBanner = false;
+    }
+    res.render('index', { 
+        title: 'i-flicks',
+        vid: req.params.vid,
+        css: css,
+        js: js,
+        showCookieBanner: showCookieBanner,
+        usersCanCreateAccount: global.iflicks_settings.usersCanCreateAccount,
+        googleAnalyticsId: global.iflicks_settings.googleAnalyticsId
+    });
 });
-
-
+*/
+/** GET the home page but display a video inthe URL.  USed for deep linking videos.
+* @param {string} vid - The _ID of the video.
+* 
+*/
+router.get('/:vidName/:vid', function (req, res, next) {
+    var js, showCookieBanner = true,  css = global.iflicks_settings.css;
+    js = 'js/index.js';
+    if (global.iflicks_settings.env === 'production') {
+        css = css.replace('.css', '.min.css');
+        js = js.replace('.js', '.min.js');
+    }
+    /// Check the cookie consent cookie.  If this is ommitted the client will still check but the banner flashes on page load.
+    if (utils.getCookie(req.headers.cookie, 'cookieConsent') === 'true') {
+        showCookieBanner = false;
+    }
+    res.render('index', { 
+        title: 'i-flicks',
+        vid: req.params.vid,
+        css: css,
+        js: js,
+        showCookieBanner: showCookieBanner,
+        usersCanCreateAccount: global.iflicks_settings.usersCanCreateAccount,
+        googleAnalyticsId: global.iflicks_settings.googleAnalyticsId
+    });
+});
  /** Exports router */
 module.exports = router;
