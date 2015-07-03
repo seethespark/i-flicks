@@ -1,4 +1,4 @@
-**i-flicks**
+  **i-flicks**
 ===================
 
 **Video sharing** website and application. 
@@ -8,10 +8,11 @@
 Overview
 --------
 
-This software is incomplete.  It works but still needs plenty of work.  
 i-flickls pulls together several components to give a full, open source video sharing application.  
 
 i-flicks is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  
+
+If you are interested in a larger installation please get in touch as that's the best way to make it happen.
 
 Getting started
 ---------------
@@ -25,6 +26,7 @@ Create a Node app and pass the i-flicks object to the HTTP server then start the
 	    ffmpegPath: '/usr/bin/ffmpeg',
 	    ffprobePath:  '/usr/bin/ffprobe',
 	    flvMetaPath:  '/usr/bin/flvmeta',
+	    sessionSecret: 'my secret',
 	 };
 	var http = require('http');
 	var server = http.createServer(require('./i-flicks/app')(settings));
@@ -154,6 +156,8 @@ mailgunDomain	| undefined	| Mailgun domain.
 gmailUsername	| undefined	| If using GMail then this is the username used to logon to GMail.  Note that GMail is only suitable for small volumes of mail and Google may block the account.  It is not the recommended option but it is an easy one to get started.
 gmailPassword	| undefined	| If using GMail then this is the password used to logon to GMail.
 mailFrom	| me@example.com	| From address used when sending emails.
+googleAnalyticsId	| undefined	| Your Google Analytics ID.  It looks something like UA-12345678-1.
+sessionSecret	| undefined	| A random phrase to encypt the session information.
 
 More
 --------
