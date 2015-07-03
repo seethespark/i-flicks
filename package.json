@@ -1,5 +1,10 @@
 {
   "name": "i-flicks",
+  "homepage": "https://github.com/seethespark/i-flicks",
+  "author": {
+    "name": "Nick Whiteley",
+    "url": "http://www.nickwhiteley.com/"
+  },
   "description": "Video sharing website and application",
   "version": "0.1.33",
   "private": false,

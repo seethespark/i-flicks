@@ -12,7 +12,9 @@ i-flickls pulls together several components to give a full, open source video sh
 
 i-flicks is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  
 
-If you are interested in a larger installation please get in touch as that's the best way to make it happen.
+If you are interested in a larger installation please get in touch as that's the best way to make it happen.  
+
+See [i-flicks.com](https://i-flicks.com/) for the working example.
 
 Getting started
 ---------------
