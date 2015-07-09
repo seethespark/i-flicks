@@ -21,7 +21,7 @@ window.iflicks = (function iflicks(settings) {
             node = node.nextSibling;
         }
     }
-
+    var $ = {};
     function get(id) {
         return document.getElementById(id);
     }
@@ -32,7 +32,7 @@ window.iflicks = (function iflicks(settings) {
         }
         if (element === null) { return; }
         if (element.addEventListener) {
-            element.addEventListener(eventType, callback);
+            element.addEventListener(eventType, callback, false);
         } else if (element.attachEvent) {
             element.attachEvent('on' + eventType, callback);
         }
@@ -300,6 +300,9 @@ window.iflicks = (function iflicks(settings) {
                 document.getElementById('videoName').classList.add('editable');
                 document.getElementById('videoDescription').contentEditable = true;
                 document.getElementById('videoDescription').classList.add('editable');
+                document.getElementById('videoTags').contentEditable = true;
+                document.getElementById('videoTags').classList.add('editable');
+                show(document.getElementById('videoTags'));
                 document.getElementById('videoPublic').classList.add('editable');
                 show(document.getElementById('videoPublic'));
                 document.getElementById('videoDirectLink').classList.add('editable');
@@ -310,6 +313,9 @@ window.iflicks = (function iflicks(settings) {
                 document.getElementById('videoName').classList.remove('editable');
                 document.getElementById('videoDescription').contentEditable = false;
                 document.getElementById('videoDescription').classList.remove('editable');
+                document.getElementById('videoTags').contentEditable = false;
+                document.getElementById('videoTags').classList.remove('editable');
+                hide(document.getElementById('videoTags'));
                 document.getElementById('videoPublic').classList.remove('editable');
                 hide(document.getElementById('videoPublic'));
                 document.getElementById('videoDirectLink').classList.remove('editable');
@@ -318,6 +324,7 @@ window.iflicks = (function iflicks(settings) {
                     id: vid,
                     name: document.getElementById('videoName').textContent,
                     description: document.getElementById('videoDescription').textContent,
+                    tags: document.getElementById('videoTags').textContent,
                     public: document.getElementById('videoPublicCheck').checked,
                     directLink: document.getElementById('videoDirectLinkCheck').checked
                 };
@@ -532,12 +539,23 @@ window.iflicks = (function iflicks(settings) {
             vidDetailElement = document.createElement('div');
             vidDetailElement.id = 'videoName';
             vidDetailElement.className = 'videoTextItem';
+            vidDetailElement.title = 'Video name';
             vidDetailElement.textContent = currentVideoDetail.name;
             videoText.appendChild(vidDetailElement);
+
             vidDetailElement = document.createElement('div');
             vidDetailElement.id = 'videoDescription';
             vidDetailElement.className = 'videoTextItem';
+            vidDetailElement.title = 'Video description';
             vidDetailElement.textContent = currentVideoDetail.description;
+            videoText.appendChild(vidDetailElement);
+
+            vidDetailElement = document.createElement('div');
+            vidDetailElement.id = 'videoTags';
+            vidDetailElement.className = 'videoTextItem';
+            vidDetailElement.title = 'Video tags';
+            vidDetailElement.textContent = currentVideoDetail.tags;
+            hide(vidDetailElement);
             videoText.appendChild(vidDetailElement);
 
             vidPublicElement = document.createElement('div');
@@ -696,12 +714,13 @@ window.iflicks = (function iflicks(settings) {
             function vidContainerClick() {
                 var vidName, currentState = window.history.state || {};
                 vidName = vid.name || '-';
+                console.log(vid);
                 vidName = vidName.replace(' ', '_');
                 currentState.method = 'listVideos';
                 currentState.scrollTop = document.body.scrollTop;
-                currentState.page = vid.page;
-                currentState.limit = vid.limit;
-                currentState.search = vid.search;
+                currentState.page = vids.page;
+                currentState.limit = vids.limit;
+                currentState.search = vids.search;
                 window.history.replaceState(currentState, 'List video', '');
                 window.history.pushState({method: 'showVideo', vid: vid._id}, 'Show video', '/' + vidName + '/' + vid._id);
                 showVideo(vid._id);
@@ -774,10 +793,8 @@ window.iflicks = (function iflicks(settings) {
         nextPrev.id = 'nextPrev';
         nextPage.className = 'nextPrev';
         prevPage.className = 'nextPrev';
-        addListener(nextPage, 'click', true, function () { listVideos(vids.page + 1, vids.limit, vids.search); });
-        addListener(prevPage, 'click', true, function () { listVideos(vids.page - 1, vids.limit, vids.search); });
-        //nextPage.addEventListener('click', function () { listVideos(vids.page + 1, vids.limit, vids.search); });
-        //prevPage.addEventListener('click', function () { listVideos(vids.page - 1, vids.limit, vids.search); });
+        addListener(nextPage, 'click', true, function () {vids.page++; listVideos(vids.page , vids.limit, vids.search); });
+        addListener(prevPage, 'click', true, function () {vids.page--; listVideos(vids.page, vids.limit, vids.search); });
 
         if (vids.page > 0) {
             nextPrev.appendChild(prevPage);
@@ -931,6 +948,7 @@ window.iflicks = (function iflicks(settings) {
                 showMessage(ex, 'undeleteVideo.fetch', 6);
             });
     }
+
     function addUserHandler(ev) {
         var i, el, readyToSend = true, newUser = {};
         for (i = 0; i < ev.target.parentNode.childNodes.length; i++) {
@@ -1157,12 +1175,26 @@ window.iflicks = (function iflicks(settings) {
         callback();
     }
 
+    function searchSubmit (ev) {
+        if (ev) { ev.preventDefault(); }
+        var searchTerm = document.getElementById('search').value.trim();
+        if (searchTerm === undefined || searchTerm === null || searchTerm.length === 0) {return;}
+        window.history.pushState({method: 'listVideos', search: searchTerm}, 'Search video', '/');
+        listVideos(0, settings.videoListPageLength, searchTerm);
+    }
+
     /// Setup the page.  Checks the browser is supported and then loads the page.
     function start() {
         checkFeatures(function () {
             addListener('submitUploadNewVideo', 'click', true, uploadFile);
             addListener('submitLogin', 'click', true, login);
             addListener('submitLogout', 'click', true, logout);
+            addListener('submitSearch', 'click', true, searchSubmit);
+            addListener('search', 'keydown', false, function (ev) {
+                if (!ev) { ev = window.event; }
+                // Enter is pressed
+                if (ev.keyCode == 13) { searchSubmit (); }
+            });
 
             addListener('closeInfoPanel', 'click', true, closeInfoPanel);
             addListener('submitCookieAccept', 'click', true, cookieAccept);
@@ -1183,6 +1215,11 @@ window.iflicks = (function iflicks(settings) {
                 if (event.state.method === 'showVideo') {
                     showVideo(event.state.vid);
                 } else if (event.state.method === 'listVideos') {
+                    listVideos(event.state.page, event.state.limit, event.state.search);
+                    if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
+                        window.scroll(event.state.scrollTop, 0);
+                    }
+                } else if (event.state.method === 'search') {
                     listVideos(event.state.page, event.state.limit, event.state.search);
                     if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
                         window.scroll(event.state.scrollTop, 0);

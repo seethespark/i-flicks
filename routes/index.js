@@ -81,11 +81,19 @@ router.get('/', function (req, res, next) {
  */
 router.get('/videolist/:page/:limit/:search', function (req, res, next) {
     flicks.setStatsD(req.statsD);
-    flicks.list(req.params.page, req.params.limit, req.params.search, req.user, function (err, docs) {
-        if (err) { err.code = 'F03001'; return next(err); }
-        res.setHeader('Content-Type', 'application/json');
-        res.send(docs);
-    });
+    if (req.params.search === undefined || req.params.search === '-') {
+        flicks.list(req.params.page, req.params.limit, req.user, function (err, docs) {
+            if (err) { err.code = 'F03001'; return next(err); }
+            res.setHeader('Content-Type', 'application/json');
+            res.send(docs);
+        });
+    } else {
+        flicks.search(req.params.page, req.params.limit, req.params.search, req.user, function (err, docs) {
+            if (err) { err.code = 'F03001'; return next(err); }
+            res.setHeader('Content-Type', 'application/json');
+            res.send(docs);
+        });
+    }
 });
 
 /** GET the text detail about a video
@@ -297,6 +305,7 @@ router.post('/editVideo', function (req, res, next) {
             flick.description = req.body.description;
             flick.public = req.body.public;
             flick.directLink = req.body.directLink;
+            flick.tags = req.body.tags;
             flick.save(function (err) {
                 if (err) { err.code = 'F03010'; return next(err); }
                 res.setHeader('Content-Type', 'application/json');
@@ -434,9 +443,9 @@ router.post('/copy', function (req, res, next) {
 * 
 */
 router.get('/test', function (req, res, next) {
-    utils.getFileDetails('E:\\Mercurial\\nodejs\\iflicks\\uploads\\archive\\1d48fe31a8e5d8b20d7c24362bfc4e02.mp4', function (err, output) {
+    flicks.search(1, 10, 'ABCDs Lokey', req.user, function (err, flcikList) {
         if (err) { return next(err); }
-        res.send(output);
+        res.send(flcikList);
     });
 });
 

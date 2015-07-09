@@ -7,6 +7,8 @@
 		</a>
 		<span id="message" class="message"></span>
 		<span id="headerBarUserName"></span>
+		<input type="text" id="search" name="search" placeholder="Search...">
+		<input type="button" id="submitSearch" value="Search" class="button">
 		<span id="loggedinContainer">
 			<input type="button" id="submitLogout" value="Logout" class="button">
 			<input type="button" id="showUploadContainer" value="Upload" class="button">
@@ -14,8 +16,8 @@
 		</span>
 		<span id="loginContainer">
 			<span id="loginTextInputs">
-				<label for="fileName">Username: </label><input type="text" id="username" name="username">
-				<label for="fileName">Password: </label><input type="text" id="password" class="">
+				<label for="fileName">Username: </label><input type="text" id="username" name="username" placeholder="Username">
+				<label for="fileName">Password: </label><input type="text" id="password" class="" placeholder="Password">
 			</span>
 			<input type="button" id="submitLogin" value="Logon" class="button">
 			{{#if usersCanCreateAccount }}
@@ -45,7 +47,7 @@
 				</div>
 			</label>
 			-->
-			<label for="videoFile">File to upload</label><input type="file" name="video" id="videoFile" class="uploadContainer"> 
+			<label for="videoFile">File to upload</label><input type="file" name="video" id="videoFile" class="uploadContainer button"> 
 			<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
 			<video id="thumbVid" src="/" class="hide" width="70" height="40" controls>
 			</video>

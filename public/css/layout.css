@@ -148,7 +148,7 @@ body {
 	position: relative;
 }
 .vidContent:hover {
-	opacity: 0.25;
+	opacity: 0.15;
 }
 .vidLoadingThumb {
 	position: absolute;
@@ -398,9 +398,10 @@ input[type="button"] {
 /*@media only screen and (max-width: 479px) {*/
 @media only screen and (max-width: 600px) {
 	#headerBar {
-		width: 100% - 10px;
+		/*width: 100% - 10px;*/
 		text-align: center;
 		padding: 5px;
+		height: 80px;
 	}
 	#headerBarUserName {
 		display: block;

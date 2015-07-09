@@ -44,8 +44,14 @@ flick.thumb = function (id, fileName, user, callback) {
             statsD.timing('db.flick.thumb', dbStartTime);
         }
         if (err) { callback(err, undefined); return; }
-        if (doc === null) { callback(new Error('Missing flick.'), undefined); return; }
+        if (doc === null) {
+            err = new Error('Missing flick.');
+            err.status = 404;
+            callback(err, undefined);
+            return;
+        }
         tmpThubmnailPath = doc.mediaPath + '/' + fileName + '.jpg';
+
         fs.stat(tmpThubmnailPath, function (err, stat) {
             if (err) {
                 callback(undefined, doc.mediaPath + '/thumb.jpg');

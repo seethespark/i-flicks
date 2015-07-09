@@ -15,7 +15,6 @@ function setHeaders(res, contentType) {
 }
 
 router.get('/video.js', function (req, res, next) {
-    console.log(global.iflicks_settings.env);
 	if (global.iflicks_settings.env === 'production') {
         setHeaders(res, 'text/javascript');
 		res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/video.js'));
