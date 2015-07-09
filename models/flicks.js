@@ -100,7 +100,7 @@ flicks.search = function (page, limit, searchh, user, callback) {
   page = Number(page);
   limit = Number(limit);
   //skip = page * limit;
-  where = {};//{ encoded: true, deleted: { $exists: false } };
+  where = { encoded: true, deleted: { $exists: false } };
   user = user || {};
   if (user.isSysAdmin) {
     // Do nothing

@@ -12,7 +12,7 @@ i-flickls pulls together several components to give a full, open source video sh
 
 i-flicks is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  
 
-If you are interested in a larger installation please get in touch as that's the best way to make it happen.  
+If you are interested in a larger installation or new features please get in touch as that's the best way to make it happen.  
 
 See [i-flicks.com](https://i-flicks.com/) for the working example.
 
@@ -28,6 +28,8 @@ Create a Node app and pass the i-flicks object to the HTTP server then start the
 	    ffmpegPath: '/usr/bin/ffmpeg',
 	    ffprobePath:  '/usr/bin/ffprobe',
 	    flvMetaPath:  '/usr/bin/flvmeta',
+	    uploadPath: '/var/uploads',
+  		mediaPath: '/var/uploads',
 	    sessionSecret: 'my secret',
 	 };
 	var http = require('http');
@@ -88,14 +90,12 @@ The default settings and latest installs of the following packages should all wo
 Create a folder for your new project on your computer and move to that folder.  
 run: 
 
-~~npm install i-flicks~~ coming soon
+npm install i-flicks
 
-	git clone https://github.com/seethespark/i-flicks.git  
-	cd i-flicks  
-	npm install
-	cd views  
+	Check the runOnce file exists.  Sometimes we forget to rename it before deploying to NPM.  If it doesn't then rename the .done file:  
+	cd node_modules/i-flicks/views  
 	mv runOnce.done.hbs runOnce.hbs *OR* rename runOnce.done.hbs runOnce.hbs  
-	cd ..
+
 		
 Create a node application, create a "settings" object with paths to the software installed above and require i-flicks....  
 For example, add this to a file called app.js
