@@ -13,7 +13,17 @@ describe('flicks object', function () {
 
     describe('list', function () {
         it('should return an array', function () {
-            flicks.list(0, 2, '-', {isSysAdmin: true}, function (err, flicksList) {
+            flicks.list(0, 2, {isSysAdmin: true}, function (err, flicksList) {
+                assert.equal(undefined, err);
+                assert.equal(true, Array.isArray(flicksList.data));
+                //assert.equal(true, (function () { if (flicksList.data.length <= 2) { return true; } return false; })());
+            });
+        });
+    });
+
+    describe('search', function () {
+        it('should return an array', function () {
+            flicks.search(0, 2, '-', {isSysAdmin: true}, function (err, flicksList) {
                 assert.equal(undefined, err);
                 assert.equal(true, Array.isArray(flicksList.data));
                 //assert.equal(true, (function () { if (flicksList.data.length <= 2) { return true; } return false; })());
