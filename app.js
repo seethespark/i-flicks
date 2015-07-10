@@ -177,7 +177,8 @@ module.exports = function ret(sett) {
             } else {
                 res.render('error', {
                     message: err.message,
-                    error: err
+                    error: err,
+                    css: global.iflicks_settings.css
                 });
             }
         });
@@ -194,7 +195,8 @@ module.exports = function ret(sett) {
         } else {
             res.render('error', {
                 message: err.message,
-                error: {}
+                error: {},
+                css: global.iflicks_settings.css
             });
         }
     });

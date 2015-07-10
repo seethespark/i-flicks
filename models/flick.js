@@ -145,6 +145,7 @@ flick.view = function (req, callback) {
             userId = 'Anonymous';
         }
         flickId = req.params.id || req.body.id;
+        console.log();
         ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
         doc = {
             flickId: flickId,

@@ -8,13 +8,18 @@
 Overview
 --------
 
-i-flickls pulls together several components to give a full, open source video sharing application.  
+i-flicks pulls together several components to give a full, open source video sharing application.  
 
-i-flicks is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  
+i-flicks is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  i-flicks originated from a desire to share family videos hosted on a home server and I couldn't find a fully featured Node implementation.
+
+As of the time of writing this, i-flicks is still in active developmnent and isn't following Semantic Versioning yet.  APIs may change.  Database changes should be additive and so new versions won't overwrite your existing videos (unless your uploads directory is inside your node_modules folder!).
 
 If you are interested in a larger installation or new features please get in touch as that's the best way to make it happen.  
 
 See [i-flicks.com](https://i-flicks.com/) for the working example.
+
+<a href="https://twitter.com/i_flicks" class="twitter-follow-button" data-show-count="false">Follow @i_flicks</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
 
 Getting started
 ---------------
@@ -28,8 +33,8 @@ Create a Node app and pass the i-flicks object to the HTTP server then start the
 	    ffmpegPath: '/usr/bin/ffmpeg',
 	    ffprobePath:  '/usr/bin/ffprobe',
 	    flvMetaPath:  '/usr/bin/flvmeta',
-	    uploadPath: '/var/uploads',
-  		mediaPath: '/var/uploads',
+	    uploadPath: '/var/uploads/i-flicks',
+  		mediaPath: '/var/uploads/i-flicks',
 	    sessionSecret: 'my secret',
 	 };
 	var http = require('http');
@@ -96,6 +101,11 @@ npm install i-flicks
 	cd node_modules/i-flicks/views  
 	mv runOnce.done.hbs runOnce.hbs *OR* rename runOnce.done.hbs runOnce.hbs  
 
+There is currently a bug in Fluent-FFmpeg which means videos in portrait mode cause a crash.  
+Open file below your install folder at ./node_modults/i-flicks/node_modules/fluent_ffmpeg/lib/ffprobe.js  
+Add  "lines = lines.filter(Boolean);" to line 15.
+Check the [Github issue](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg/issues/404) for updates.
+
 		
 Create a node application, create a "settings" object with paths to the software installed above and require i-flicks....  
 For example, add this to a file called app.js
@@ -105,8 +115,8 @@ For example, add this to a file called app.js
 	    ffprobePath:  '/usr/bin/ffprobe',
 	    flvMetaPath:  '/usr/bin/flvmeta',
 	    databasePath: '',
-	    uploadPath: '/var/uploads',
-	    mediaPath: '/var/uploads',
+	    uploadPath: '/var/uploads/i-flicks',
+	    mediaPath: '/var/uploads/i-flicks',
 	    sessionSecret: 'enter your secret here',
 	    env: 'production', // development or production. 
   		css: 'white.css' // white.css or black_yellow.css
@@ -161,6 +171,29 @@ mailFrom	| me@example.com	| From address used when sending emails.
 googleAnalyticsId	| undefined	| Your Google Analytics ID.  It looks something like UA-12345678-1.
 sessionSecret	| undefined	| A random phrase to encypt the session information.
 
+Linux permissions
+--------
+sudo -i  
+<enter password>
+chown -R www-data:www-data /var/www  
+chmod go-rwx /var/www  
+chmod go+x /var/www  
+chgrp -R www-data /var/www  
+chmod -R go-rwx /var/www  
+chmod -R g+rx /var/www  
+chmod -R g+rwx /var/www  
+
+chown -R www-data:www-data /var/uploads/i-flicks  
+
+Credit goes to http://fideloper.com/user-group-permissions-chmod-apache for this.
+
 More
 --------
 If you use i-flicks or would like to see a specific feature please drop contact@i-flicks.com an email.  We would love to hear what you are doing.
+
+i-flicks has a "Send" feature which allows videos to be sent from one installation to another.  If you are logged in and view a video this option is available at the bottom of the video.
+
+Errors can be viewed, users created and all sorts of other things via http://localhost:3000/toolbox.  You need to be logged in otherwise it will just redirect you to the home page.
+
+i-flicks will remember the previous volume and postion in a video for logged in users.
+
