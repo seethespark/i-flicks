@@ -498,32 +498,6 @@ router.get('/privacy', function (req, res, next) {
 * @param {string} vid - The _ID of the video.
 * 
 */
-/*router.get('/:vid', function (req, res, next) {
-    var js, showCookieBanner = true,  css = global.iflicks_settings.css;
-    js = 'js/index.js';
-    if (global.iflicks_settings.env === 'production') {
-        css = css.replace('.css', '.min.css');
-        js = js.replace('.js', '.min.js');
-    }
-    /// Check the cookie consent cookie.  If this is ommitted the client will still check but the banner flashes on page load.
-    if (utils.getCookie(req.headers.cookie, 'cookieConsent') === 'true') {
-        showCookieBanner = false;
-    }
-    res.render('index', { 
-        title: 'i-flicks',
-        vid: req.params.vid,
-        css: css,
-        js: js,
-        showCookieBanner: showCookieBanner,
-        usersCanCreateAccount: global.iflicks_settings.usersCanCreateAccount,
-        googleAnalyticsId: global.iflicks_settings.googleAnalyticsId
-    });
-});
-*/
-/** GET the home page but display a video inthe URL.  USed for deep linking videos.
-* @param {string} vid - The _ID of the video.
-* 
-*/
 router.get('/:vidName/:vid', function (req, res, next) {
     flick.load(req.params.vid, req.user, function (err, doc) {
         if (err) { err.code = 'F03014'; console.log(err); return next(err); }

@@ -99,6 +99,11 @@ body {
 	right: 0px;
 	border-radius: 5px;
 }
+.createAccountContainer {
+	position: absolute;
+	left: 150px;
+	height: 12px;
+}
 #videoList {
 	text-align: center;
 }

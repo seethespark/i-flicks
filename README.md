@@ -170,7 +170,7 @@ gmailPassword	| undefined	| If using GMail then this is the password used to log
 mailFrom	| me@example.com	| From address used when sending emails.
 googleAnalyticsId	| undefined	| Your Google Analytics ID.  It looks something like UA-12345678-1.
 sessionSecret	| undefined	| A random phrase to encypt the session information.
-
+usersCanCreateAccount	| false	| People visiting can create their own account.  Otherwise it must be created via the toolbox.
 Linux permissions
 --------
 sudo -i  
