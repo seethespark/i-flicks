@@ -10,6 +10,7 @@ var request = require('request');
 var mkdirp = require('mkdirp');
 var FormData = require('form-data');
 var flick = require('../models/flick');
+var user = require('../models/user');
 var flicks = require('../models/flicks');
 var flickUser = require('../models/flickUser');
 var User = require('../models/user');
@@ -127,6 +128,7 @@ router.get('/thumb/:id/:fileName', function (req, res, next) {
         if (err) { err.code = 'F03002'; return next(err); }
         if (thumbPath === undefined) { err = new Error('Image missing (404)'); err.status = 404; return next(err); }
         setHeaders(res);
+        //console.log(thumbPath);
         res.sendFile(thumbPath, {}, function (err) {
             if (err) {
                 err.code = 'F03003';
@@ -436,6 +438,31 @@ router.post('/copy', function (req, res, next) {
                 });
             }
         });
+});
+
+
+/** GET user validation
+* @todo remove this
+* 
+*/
+router.get('/userconfirm/:id/:key', function (req, res, next) {
+    var user = new User(req);
+    user.load(req.params.id, function (err, usr) {
+        if (err) { return next(err); }
+        if (req.params.key === usr.emailConfirmationKey) {
+            
+            user.emailConfirmed = true;
+            user.emailConfirmationKey = undefined;
+            user.save(function (err) {
+                if (err) { return next(err); }
+                res.render('emailValidate', {confirmed: true, message: 'Your email has now been confirmed and so you can upload videos.  You will be redirected to the home page now.'});
+            });
+        } else if (user.emailConfirmed === true)  {
+            res.render('emailValidate', {confirmed: true, message: 'Email address already confirmed'});
+        }else {
+            res.render('emailValidate', {confirmed: false, message: 'Code does not match'});
+        }
+    });
 });
 
 /** GET testing something out

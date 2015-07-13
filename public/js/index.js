@@ -254,6 +254,7 @@ window.iflicks = (function iflicks(settings) {
     function uploadFile() {
         var imgFileElement = document.getElementById('videoFile'),
             uploadContainer = document.getElementById('uploadContainer'),
+            uploadProgress = document.getElementById('uploadProgress'),
             i,
             elList = [],
             imageData = new window.FormData();
@@ -266,7 +267,31 @@ window.iflicks = (function iflicks(settings) {
         for (i = 0; i < elList.length; i++) {
             imageData.append(elList[i].name, elList[i].value);
         }
-        window.fetch('/upload/aa', {
+
+        uploadProgress.classList.remove('hide');
+        uploadProgress.max = 1;
+        var xhr = new XMLHttpRequest();
+        addListener(xhr.upload, 'progress', false, function (ev) {
+            uploadProgress.value = (ev.loaded / ev.total) ;
+        });
+        addListener(xhr, 'readystatechange', false, function (ev) {
+            if (xhr.readyState == 4) {
+                if (xhr.status === 202) {
+                    document.getElementById('uploadForm').reset();
+                    showMessage(xhr.responseText, 'uploadFile.msg', 5);
+                    uploadProgress.classList.add('hide');
+                } else {
+                    showMessage(xhr.responseText, 'uploadFile.error', 6);
+                    uploadProgress.classList.add('hide');
+                }
+            }
+        });
+        xhr.open('PUT', '/upload/aa', true);
+        //xhr.setRequestHeader("X-FILENAME", file.name);
+        xhr.send(imageData);
+
+
+/*        window.fetch('/upload/aa', {
             method: 'PUT',
             credentials: 'include',
             body: imageData
@@ -281,6 +306,7 @@ window.iflicks = (function iflicks(settings) {
                 }
             })
             .catch(function (ex) { showMessage(ex, 'uploadFile', 10); });
+    */
     }
 
     /// Handler for the then videos are clicked
@@ -1054,6 +1080,9 @@ window.iflicks = (function iflicks(settings) {
             if (window.FormData === undefined) {
                 document.getElementById('showUploadContainer').style.display = 'none';
             }
+            if (user.emailConfirmed !== true) {
+                document.getElementById('showUploadContainer').style.display = 'none';
+            }
             
         }
     }
@@ -1235,8 +1264,8 @@ window.iflicks = (function iflicks(settings) {
                     currentTime = vjs.currentTime();
                     isPaused = vjs.paused();
                     vjs.dimensions(vidDims.videoWidth, vidDims.videoHeight);
-                    vjs.src([{type: 'video/mp4', src: 'video/' + currentVideoDetail._id + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() },
-                            {type: 'video/webm', src: 'video/' + currentVideoDetail._id + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() }
+                    vjs.src([{type: 'video/mp4', src: '/video/' + currentVideoDetail._id + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() },
+                            {type: 'video/webm', src: '/video/' + currentVideoDetail._id + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() }
                         ]);
                     vjs.currentTime(currentTime);
                     if (!isPaused) {

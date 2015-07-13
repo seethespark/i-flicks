@@ -25,6 +25,11 @@ router.put('/:filename',
                 res.status(500).send('Error: Name must be supplied.');
                 res.end();
                 return;
+            }            
+            if (req.user.emailConfirmed !== true) {
+                res.status(500).send('Error: email not confirmed.');
+                res.end();
+                return;
             }
             var doc, storageName;
             storageName = file.name.substring(0, file.name.lastIndexOf('.'));
@@ -51,8 +56,10 @@ router.put('/:filename',
     function (req, res, next) {
         //console.log(req.body);
         if (Object.keys(req.files).length === 0) {
+            console.log('No file');
             res.status(500).send('Error: No file received.');
         } else if (req.body.name === undefined || req.body.name === '') {
+            console.log('No name');
             res.status(500).send('Error: Name must be supplied.');
         } else {
             res.status(202).send('Received and now encoding.');

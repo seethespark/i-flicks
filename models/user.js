@@ -4,10 +4,68 @@ var crypto = require('crypto');
 var bcrypt = require('bcrypt');
 var Nedb = require('nedb');
 var utils = require('../lib/utils');
+var nodemailer = require('nodemailer');
+var mg = require('nodemailer-mailgun-transport');
 
 var logger = require('../lib/logger');
 
 var db = new Nedb({ filename: global.iflicks_settings.databasePath + 'usersdb', autoload: true });
+
+var nodemailerTransport = (function () {
+    if (global.iflicks_settings.gmailUsername) {
+        return nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: global.iflicks_settings.gmailUsername,
+                pass: global.iflicks_settings.gmailPassword
+            }
+        });
+    } else if (global.iflicks_settings.mailgunKey) {
+        return nodemailer.createTransport(
+            mg({auth: {
+                api_key: global.iflicks_settings.mailgunKey,
+                domain: global.iflicks_settings.mailgunDomain
+            }})
+        );
+    }
+}());
+
+function random(howMany, chars) {
+    chars = chars || "abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ0123456789";
+    var rnd = crypto.randomBytes(howMany),
+        value = new Array(howMany),
+        len = chars.length;
+
+    for (var i = 0; i < howMany; i++) {
+        value[i] = chars[rnd[i] % len];
+    }
+
+    return value.join('');
+}
+
+function sendConformationEmail(userId, rand, host) {
+    db.findOne({_id: userId}, /*{_id: 1, name: 1, description: 1},*/ function (err, result) {
+        if (err) { logger.errorNoReq('utils.sendConformationEmail.loadUser', 'F06015', err, 2); }
+        var validationUrl =  host + 'userconfirm/' + userId + '/' + rand;
+        var htmlBody = '<p><b>i-flicks account created</b></p><p>Please click the following link or copy it into your browser\'s address bar to confirm your email address.</p>' +
+            '<a href="' + validationUrl + '">' + validationUrl + '</a>';
+        // setup e-mail data with unicode symbols
+        var mailOptions = {
+            from: global.iflicks_settings.mailFrom, // sender address
+            to: result.emailAddress, // list of receivers
+            subject: 'i-flicks account', // Subject line
+            //text: body, //, // plaintext body
+            html: htmlBody
+        };
+        // send mail with defined transport object
+        nodemailerTransport.sendMail(mailOptions, function (err, info) {
+            // console.log(info);
+            if (err) {
+                logger.errorNoReq('utils.sendUploadEmail.sendMail', 'F06016', err, 2);
+            }
+        });
+    });
+}
 
 /// The database portion of the user instantiation process
 function getUser(req, username, password, userId, includeDisabled, callback) {
@@ -45,6 +103,9 @@ function getUser(req, username, password, userId, includeDisabled, callback) {
                 user.aesKey = result.aeskey;
                 user.enabled = result.enabled;
                 user.customerId = result.customerid;
+                user.emailConfirmed = result.emailConfirmed;
+                user.emailConfirmationKey = result.emailConfirmationKey;
+
                 user.dateLastActive = result.dateLastActive;
                 user.options = result.options;
                 callback(undefined, user);
@@ -64,6 +125,8 @@ function getUser(req, username, password, userId, includeDisabled, callback) {
                         user.emailAddress = result.emailAddress;
                         user.isSysAdmin = result.isSysAdmin;
                         user.aesKey = result.aeskey;
+                        user.emailConfirmed = result.emailConfirmed;
+                        user.emailConfirmationKey = result.emailConfirmationKey;
                         user.enabled = result.enabled;
                         user.options = result.options;
 
@@ -199,6 +262,8 @@ function updateUser(user, callback) {
                 emailAddress: user.emailAddress,
                 isSysAdmin: user.isSysAdmin,
                 enabled: user.enabled,
+                emailConfirmed: user.emailConfirmed,
+                emailConfirmationKey: user.emailConfirmationKey,
                 dateUpdated: new Date()
                 }
         }, function (err, result) {
@@ -234,7 +299,7 @@ function updateUser(user, callback) {
 
 
 function insertUser(user, callback) {
-    var tmpUser, dbStartTime;
+    var tmpUser, dbStartTime, rand = random(10);
     if (passwordPolicy(user.password) === false) {
         var err = new Error('Password policy not met.');
         err.status = 400;
@@ -253,6 +318,8 @@ function insertUser(user, callback) {
         surname: user.surname,
         emailAddress: user.emailAddress,
         isSysAdmin: user.isSysAdmin,
+        emailConfirmed: user.emailConfirmed,
+        emailConfirmationKey: rand,
         dateEntered: new Date(),
         dateUpdated: new Date(),
         deleted: false
@@ -275,6 +342,10 @@ function insertUser(user, callback) {
                 callback(err, undefined);
             } else {
                 user.id = result._id;
+                if (user.emailConfirmed !== true) {
+
+                    sendConformationEmail(result._id, rand, user.req.headers.referer);
+                }
                 updateUserPassword(user, callback);
             }
         } catch (errr) {
@@ -398,6 +469,7 @@ function authenticate(username, password, callback) {
             user.aesKey = result.aesKey;
             user.enabled = result.enabled;
             user.customerId = result.customerId;
+            user.emailConfirmed = result.emailConfirmed;
             user.loaded = true; // this is set after loading to prevent the change handlers from firing.
         }
         callback(err, user);
@@ -422,6 +494,8 @@ function load(userId, callback) {
             user.aesKey = result.aesKey;
             user.enabled = result.enabled;
             user.customerId = result.customerId;
+            user.emailConfirmed = result.emailConfirmed;
+            user.emailConfirmationKey = result.emailConfirmationKey;
             user.loaded = true; // this is set after loading to prevent the change handlers from firing.
             user.options = result.options;
         }
@@ -460,7 +534,8 @@ function userForBrowser() {
         forename: user.forename,
         surname: user.surname,
         isSysAdmin: user.isSysAdmin,
-        options: user.options
+        options: user.options,
+        emailConfirmed: user.emailConfirmed
     };
     
     return userTmp;
@@ -478,6 +553,7 @@ function userFromSession(usr) {
     user.changeCount = usr.changeCount;
     user.aesKey = usr.aesKey;
     user.customerId = usr.customerId;
+    user.emailConfirmed = usr.emailConfirmed;
     user.loaded = true;
     setDateLastActive(user);
 
@@ -571,6 +647,11 @@ var User = function (req) {
             //user.changeCount++;
             updateUserPassword(user, callback);
         },
+
+        get emailConfirmed() {return user.emailConfirmed; },
+        set emailConfirmed(value) { user.emailConfirmed = value; userChanged(user); },
+        get emailConfirmationKey() {return user.emailConfirmationKey; },
+        set emailConfirmationKey(value) { user.emailConfirmationKey = value; userChanged(user); },
         get includeDisabled() {return user.includeDisabled; },
         set includeDisabled(value) { user.includeDisabled = value; },
         get newUser() {return user.newUser; },

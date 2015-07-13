@@ -126,6 +126,7 @@ router.get('/userviewercol', function (req, res, next) {
         {name: 'forename', value: 'Forename', type: 'inputText'},
         {name: 'emailAddress', value: 'Email', type: 'inputText'},
         {name: 'password', value: 'Password', type: 'inputText'},
+        {name: 'emailConfirmed', value: 'Email confirmed', type: 'inputCheckbox'},
         {name: 'isSysAdmin', value: 'Admin', type: 'inputCheckbox'},
         {name: 'userSave', value: 'Save', type: 'inputSave', handler: 'amendUser'},
         {name: 'userDelete', value: 'Delete', type: 'inputSave', handler: 'deleteUser'}
@@ -238,11 +239,18 @@ router.put('/user', function (req, res, next) {
         }
         user.create(function (err, usr) {
             if (err) { return next(err); }
+            if (req.body.username.length === 0 || 
+                req.body.password.length === 0 ||
+                req.body.forename.length === 0 ||
+                req.body.emailAddress.length === 0) {
+                return next(new Error('Some fields are missing'));
+            }
             usr.username = req.body.username;
             usr.password = req.body.password;
             usr.forename = req.body.forename;
             usr.emailAddress = req.body.emailAddress;
-            usr.isSysAdmin = req.body.isSysAdmin;
+            usr.isSysAdmin = req.body.isSysAdmin || false;
+            usr.emailConfirmed = req.body.emailConfirmed || false;
 
             //usr.isSysAdmin = true;
             usr.customerId = 0;
@@ -260,8 +268,10 @@ router.post('/user', function (req, res, next) {
         if (err) { return next(err); }
         user.forename = req.body.forename || user.forename;
         user.emailAddress = req.body.emailAddress || user.emailAddress;
-        user.isSysAdmin = req.body.isSysAdmin;
-        //console.log(req.body.isSysAdmin);
+        user.isSysAdmin = req.body.isSysAdmin || false;
+        if (req.body.emailConfirmed !== undefined) {
+            user.emailConfirmed = req.body.emailConfirmed;
+        }
 
         if (req.body.password !== undefined && req.body.password !== '') {
             user.password = req.body.password;
