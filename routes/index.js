@@ -9,7 +9,7 @@ var archiver = require('archiver');
 var request = require('request');
 var mkdirp = require('mkdirp');
 var FormData = require('form-data');
-var flick = require('../models/flick');
+var Flick = require('../models/flick');
 var user = require('../models/user');
 var flicks = require('../models/flicks');
 var flickUser = require('../models/flickUser');
@@ -81,16 +81,20 @@ router.get('/', function (req, res, next) {
  * @method
  */
 router.get('/videolist/:page/:limit/:search', function (req, res, next) {
-    flicks.setStatsD(req.statsD);
+    var userId, isSysAdmin;
+    if (req.user) {
+        userId = req.user.id;
+        isSysAdmin = req.user.isSysAdmin;
+    }
     if (req.params.search === undefined || req.params.search === '-') {
-        flicks.list(req.params.page, req.params.limit, req.user, function (err, docs) {
-            if (err) { err.code = 'F03001'; return next(err); }
+        flicks.list(req.params.page, req.params.limit, userId, isSysAdmin, function (err, docs) {
+            if (err) { err.code = err.code || 'F03001'; return next(err); }
             res.setHeader('Content-Type', 'application/json');
             res.send(docs);
         });
     } else {
-        flicks.search(req.params.page, req.params.limit, req.params.search, req.user, function (err, docs) {
-            if (err) { err.code = 'F03001'; return next(err); }
+        flicks.search(req.params.page, req.params.limit, req.params.search,  userId, isSysAdmin, function (err, docs) {
+            if (err) { err.code = err.code || 'F03001'; return next(err); }
             res.setHeader('Content-Type', 'application/json');
             res.send(docs);
         });
@@ -102,19 +106,21 @@ router.get('/videolist/:page/:limit/:search', function (req, res, next) {
 * 
 */
 router.get('/videodetail/:id', function (req, res, next) {
-    var userId;
+    var userId, flick, isSysAdmin, retVal;
     if (req.user && req.user.id) {
         userId = req.user.id;
+        isSysAdmin = req.user.isSysAdmin;
     }
-    flick.setStatsD(req.statsD);
-    flick.load(req.params.id, req.user, function (err, doc) {
-        if (err) { err.code = 'F03011'; console.log(err); return next(err); }
-            flickUser.timeGet(req.params.id, userId, function (err, time) {
-                if (err) { err.code = 'F030017'; return next(err); }
-                doc.currentTime = time;
-                res.setHeader('Content-Type', 'application/json');
-                res.send(doc);
-            });
+    flick = new Flick();
+    flick.load(req.params.id, userId, isSysAdmin, function (err) {
+        if (err) { err.code = err.code || 'F03011'; console.log(err); return next(err); }
+        retVal = flick.forBrowser;
+        flickUser.timeGet(req.params.id, userId, function (err, time) {
+            if (err) { err.code = err.code || 'F030017'; return next(err); }
+            retVal.currentTime = time;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(retVal);
+        });
     });
 });
 
@@ -123,15 +129,19 @@ router.get('/videodetail/:id', function (req, res, next) {
 * 
 */
 router.get('/thumb/:id/:fileName', function (req, res, next) {
-    flick.setStatsD(req.statsD);
-    flick.thumb(req.params.id, req.params.fileName, req.user, function (err, thumbPath) {
-        if (err) { err.code = 'F03002'; return next(err); }
-        if (thumbPath === undefined) { err = new Error('Image missing (404)'); err.status = 404; return next(err); }
+    var userId, isSysAdmin, flick;
+    if (req.user) {
+        userId = req.user.id;
+        isSysAdmin = req.user.isSysAdmin;
+    }
+    flick = new Flick();
+    flick.load(req.params.id, userId, isSysAdmin, function (err) {
+        if (err) { return next(err); }
+        if (flick.thumbnailPath === undefined || flick.thumbnailPath.indexOf('null') > -1) { err = new Error('Image missing (404)'); err.status = 404; return next(err); }
         setHeaders(res);
-        //console.log(thumbPath);
-        res.sendFile(thumbPath, {}, function (err) {
+        res.sendFile(flick.thumbnailPath, {}, function (err) {
             if (err) {
-                err.code = 'F03003';
+                err.code = err.code || 'F03003';
                 return next(err);
             }
         });
@@ -143,21 +153,26 @@ router.get('/thumb/:id/:fileName', function (req, res, next) {
 * @param {string} filename - The variant of the file being requested (small.mp4, bit.webm etc.)
 */
 router.get('/video/:id/:fileName', function (req, res, next) {
-    flick.setStatsD(req.statsD);
-    flick.load(req.params.id, req.user, function (err, flickf) {
+    var userId, isSysAdmin, flick;
+    if (req.user) {
+        userId = req.user.id;
+        isSysAdmin = req.user.isSysAdmin;
+    }
+    flick = new Flick();
+    flick.load(req.params.id, userId, isSysAdmin, function (err) {
         if (err) {  err.code = err.code || 'F03004'; return next(err); }
-        file = path.join(flickf.mediaPath + '/' + req.params.fileName);
+        var file = path.join(flick.mediaPath + '/' + req.params.fileName);
         vidStreamer.settings({
-            "rootFolder": flickf.mediaPath,
-            "rootPath": 'video/' + req.params.id
+            "rootFolder": flick.mediaPath,
+            "rootPath": 'video/' + flick.id
         });
         vidStreamer(req, res);
     });
-    flick.view(req, function (err) {
+    /*flick.view(req, function (err) {
         if (err) {
             logger.error(req,  'index.get.video.flickView',(err.code || 'F03016'), err, 2);
         }
-    });
+    });*/
 });
 
 /** POST a record that a video has been played
@@ -175,16 +190,23 @@ router.post('/error', function (req, res, next) {
 * 
 */
 router.post('/playVideo/:id', function (req, res, next) {
-    flick.setStatsD(req.statsD);
-    flick.play(req.params.id, function (err) {
-        if (err) { err.code = 'F03007'; return next(err); }
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).send('{}');
+    var userId, isSysAdmin, flick;
+    if (req.user) {
+        userId = req.user.id;
+        isSysAdmin = req.user.isSysAdmin;
+    }
+    flick = new Flick(), ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+    flick.load(req.params.id, userId, isSysAdmin, function (err) {
+        if (err) { err.code = err.code || 'F03007'; return next(err); }
+        flick.play(ip, function (err, newCount) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).send({playcount: newCount});
+        });
     });
 });
 
 
-/** POST an rating
+/** POST a rating
 * @param {string} id - The _id of the video
 * 
 */
@@ -194,11 +216,13 @@ router.post('/rating/:id/:rating', function (req, res, next) {
         res.status(200).send({error: "You must be logged in to rate"});
         return;
     }
-    flick.setStatsD(req.statsD);
-    flick.rating1(req.params.id, req.user.id, req.params.rating, function (err) {
-        if (err) { err.code = 'F030018'; return next(err); }
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).send({All: "OK"});
+    var flick = new Flick(), ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+    flick.load(req.params.id, req.user.id, req.user.isSysAdmin, function (err) {
+        if (err) { err.code = err.code || 'F030018'; return next(err); }
+        flick.suggestRating(req.params.rating, req.user.id, ip, function (err) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).send({All: "OK"});
+        });
     });
 });
 
@@ -212,9 +236,8 @@ router.post('/timeupdate/:id/:time', function (req, res, next) {
         res.status(200).send('{}');
         return;
     }
-    flick.setStatsD(req.statsD);
     flickUser.timeUpdate(req.params.id, req.user.id, req.params.time, function (err) {
-        if (err) { err.code = 'F030014'; return next(err); }
+        if (err) { err.code = err.code || 'F030014'; return next(err); }
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send('{}');
     });
@@ -226,13 +249,13 @@ router.post('/timeupdate/:id/:time', function (req, res, next) {
 */
 router.delete('/video/:id', function (req, res, next) {
     if (!req.user) { var err = new Error('Delete access denied'); err.status = 401; return next(err); }
-    flick.setStatsD(req.statsD);
-    flick.load(req.params.id, req.user, function (err, flickf) {
-        if (err) { err.code = 'F03012'; return next(err); }
+    var flick = new Flick();
+    flick.load(req.params.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+        if (err) { err.code = err.code || 'F03012'; return next(err); }
         if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
 
-            flick.remove(req.params.id, function (err) {
-                if (err) { err.code = 'F03008'; return next(err); }
+            flick.delete(function (err) {
+                if (err) { err.code = err.code || 'F03008'; return next(err); }
                 res.status(200).send('');
             });
         } else {
@@ -247,13 +270,13 @@ router.delete('/video/:id', function (req, res, next) {
 */
 router.post('/undelete/:id', function (req, res, next) {
     if (!req.user) { var err = new Error('Undelete access denied'); err.status = 401; return next(err); }
-    flick.setStatsD(req.statsD);
-    flick.load(req.params.id, req.user, function (err, flickf) {
-        if (err) { err.code = 'F03013'; return next(err); }
+    var flick = new Flick();
+    flick.load(req.params.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+        if (err) { err.code = err.code || 'F03013'; return next(err); }
         if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
 
             flick.remove(req.params.id, function (err) {
-                if (err) { err.code = 'F03009'; return next(err); }
+                if (err) { err.code = err.code || 'F03009'; return next(err); }
                 res.status(200).send('');
             });
         } else {
@@ -268,11 +291,10 @@ router.post('/undelete/:id', function (req, res, next) {
 * 
 */
 router.get('/videolistunencoded/:page/:limit', function (req, res, next) {
-    if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
+    if (!req.user) { var err = new Error('This page is restricted to logged in people'); err.status = 401; return next(err); }
     //userId = req.user.id;
-    flicks.setStatsD(req.statsD);
-    flicks.listUnencoded(req.params.page, req.params.limit, req.user, function (err, flicks) {
-        if (err) { err.code = 'F03010'; return next(err); }
+    flicks.listUnencoded(req.params.page, req.params.limit, req.user.id, function (err, flicks) {
+        if (err) { err.code = err.code || 'F03010'; return next(err); }
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(flicks);
     });
@@ -299,17 +321,17 @@ router.get('/newvideo', function (req, res) {
 */
 router.post('/editVideo', function (req, res, next) {
     if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
-    flick.setStatsD(req.statsD);
-    flick.load(req.body.id, req.user, function (err, flickf) {
-        if (err) { err.code = 'F03009'; return next(err); }
+    var flick = new Flick();
+    flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+        if (err) { err.code = err.code || 'F03009'; return next(err); }
         if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
             flick.name = req.body.name;
             flick.description = req.body.description;
-            flick.public = req.body.public;
-            flick.directLink = req.body.directLink;
+            flick.isPublic = req.body.public;
+            flick.isDirectLinkable = req.body.directLink;
             flick.tags = req.body.tags;
             flick.save(function (err) {
-                if (err) { err.code = 'F03010'; return next(err); }
+                if (err) { err.code = err.code || 'F03010'; return next(err); }
                 res.setHeader('Content-Type', 'application/json');
                 res.status(200).send({All: "OK"});
             });
@@ -325,7 +347,7 @@ router.post('/editVideo', function (req, res, next) {
 */
 router.post('/option', function (req, res, next) {
     if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
-    var opt, user = new User(req);
+    var opt, user = new User();
     user.load(req.user.id, function (err, usr) {
         if (err) { return next(err); }
         for(opt in req.body) {
@@ -342,27 +364,36 @@ router.post('/option', function (req, res, next) {
 * 
 */
 router.put('/user', function (req, res, next) {
-    var user = new User(req);
+    var user = new User();
     user.checkUserExists(req.body.username, function(err, userExists) {
         if (err) { return next(err); }
         if (userExists) {
             err = new Error('Username exists');
             return next(err);
         }
+        if (req.body.username.length === 0 ||
+            req.body.password.length === 0 ||
+            req.body.firstName.length === 0 ||
+            req.body.lastName.length === 0 ||
+            req.body.emailAddress.length === 0) {
+            err = new Error('Required fields missing.');
+            return next(err);
+        }
+        if ( /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i.test(req.body.emailAddress) === false) {
+            err = new Error('Invalid email address.  If you think this is wrong please contact support.');
+            return next(err);
+        }
+        user.username = req.body.username;
+        user.password = req.body.password;
+        user.firstName = req.body.firstName;
+        user.lastName = req.body.lastName;
+        user.emailAddress = req.body.emailAddress;
+        user.isEnabled = true;
+        user.isConfirmed = false;
+        user.isSysAdmin = false;
         user.create(function (err, usr) {
             if (err) { return next(err); }
-            usr.username = req.body.username;
-            usr.password = req.body.password;
-            usr.forename = req.body.forename;
-            usr.emailAddress = req.body.emailAddress;
-            usr.isSysAdmin = false;
-
-            //usr.isSysAdmin = true;
-            usr.customerId = undefined;
-            usr.save(function (err) {
-                if (err) { return next(err); }
-                res.send({reply: 'Hello ' + usr.username});
-            });
+            res.send({reply: 'Hello ' + user.firstName});
         });
     });
 });
@@ -377,7 +408,7 @@ router.post('/copy', function (req, res, next) {
         .auth(req.body.username, req.body.password, true)
         .on('error', function(err) {
             console.log('err');
-            err.code = 'F03016';
+            err.code = err.code || 'F03016';
             return next(err);
         })
         .on('response', function(response) {
@@ -392,9 +423,9 @@ router.post('/copy', function (req, res, next) {
                     return next(err);
                 });
             } else {
-                flick.setStatsD(req.statsD);
-                flick.load(req.body.id, req.user, function (err, flickf) {
-                    if (err) { err.code = 'F03015'; return next(err); }
+                var flick = new Flick();
+                flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+                    if (err) { err.code = err.code || 'F03021'; return next(err); }
 
                     mkdirp(flickf.mediaPath + '_tmp', function(err) {
                         var output = fs.createWriteStream(flickf.mediaPath + '_tmp/output.zip');
@@ -416,7 +447,7 @@ router.post('/copy', function (req, res, next) {
                                 .auth(req.body.username, req.body.password, true)
 
                                 .on('error', function(err) {
-                                    err.code = 'F03018';
+                                    err.code = err.code || 'F03018';
                                     logger.error(req, 'api.copy.post.unzip', 'F03018', err, 2);
                                     //return next(err);
                                 })
@@ -428,7 +459,7 @@ router.post('/copy', function (req, res, next) {
                         });
                         archive.pipe(output);
                         archive.directory(flickf.mediaPath, '');
-                        archive.append(JSON.stringify(flickf), { name:'flick.json' });
+                        archive.append(JSON.stringify(flick), { name:'flick.json' });
                         archive.finalize();                    
                     });
 
@@ -446,22 +477,17 @@ router.post('/copy', function (req, res, next) {
 * 
 */
 router.get('/userconfirm/:id/:key', function (req, res, next) {
-    var user = new User(req);
+    var user = new User();
     user.load(req.params.id, function (err, usr) {
-        if (err) { return next(err); }
-        if (req.params.key === usr.emailConfirmationKey) {
-            
-            user.emailConfirmed = true;
-            user.emailConfirmationKey = undefined;
-            user.save(function (err) {
-                if (err) { return next(err); }
+        if (err) { err.code = err.code || 'F03020'; return next(err); }
+        user.checkConfirmationKey(req.params.key, function (err, isConfirmed) {
+            if (err) { return next(err); }
+            if (isConfirmed) {
                 res.render('emailValidate', {confirmed: true, message: 'Your email has now been confirmed and so you can upload videos.  You will be redirected to the home page now.'});
-            });
-        } else if (user.emailConfirmed === true)  {
-            res.render('emailValidate', {confirmed: true, message: 'Email address already confirmed'});
-        }else {
+            } else {
             res.render('emailValidate', {confirmed: false, message: 'Code does not match'});
-        }
+            }
+        });
     });
 });
 
@@ -526,8 +552,14 @@ router.get('/privacy', function (req, res, next) {
 * 
 */
 router.get('/:vidName/:vid', function (req, res, next) {
-    flick.load(req.params.vid, req.user, function (err, doc) {
-        if (err) { err.code = 'F03014'; console.log(err); return next(err); }
+    var userId, isSysAdmin;
+    if (req.user) {
+        userId = req.user.id;
+        isSysAdmin = req.user.isSysAdmin;
+    }
+    var flick = new Flick();
+    flick.load(req.params.vid, userId, isSysAdmin, function (err) {
+        if (err) { err.code = err.code || 'F03014'; console.log(err); return next(err); }
         var js = 'js/index.js', 
             showCookieBanner = true,  
             css = global.iflicks_settings.css;

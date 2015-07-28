@@ -26,7 +26,7 @@ Getting started
 
 > You should be able to get i-flicks up and running with no programming experience but you will find a basic understanding of Javascript and Node.js useful.
 
-### tl;dr  
+### Quick start (for those who think they know what they are doing)
 Create a Node app and pass the i-flicks object to the HTTP server then start the app.
 
 	var settings = {
@@ -36,6 +36,9 @@ Create a Node app and pass the i-flicks object to the HTTP server then start the
 	    uploadPath: '/var/uploads/i-flicks',
   		mediaPath: '/var/uploads/i-flicks',
 	    sessionSecret: 'my secret',
+	    baseURL: 'http://localhost:3000',
+  		databaseType: 'nedb',
+
 	 };
 	var http = require('http');
 	var server = http.createServer(require('./i-flicks/app')(settings));
@@ -189,7 +192,7 @@ Credit goes to http://fideloper.com/user-group-permissions-chmod-apache for this
 
 More
 --------
-If you use i-flicks or would like to see a specific feature please drop contact@i-flicks.com an email.  We would love to hear what you are doing.
+If you use i-flicks or would like to see a specific feature please drop Nick an email at contact@i-flicks.com.  He would love to hear what you are doing.
 
 i-flicks has a "Send" feature which allows videos to be sent from one installation to another.  If you are logged in and view a video this option is available at the bottom of the video.
 

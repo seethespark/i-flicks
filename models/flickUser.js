@@ -48,6 +48,9 @@ function timeUpdate(flickId, userId, time, callback) {
 
 /** 
  * Get the time the video was played to last time.
+ * @param {int} flickId - ID for flick
+ * @param {int} userId - UUID for user
+ * @param {Requester~requestCallback} callback
  */
 function timeGet(flickId, userId, callback) {
     if (userId === undefined) { callback(undefined, 0); return; }

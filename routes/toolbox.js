@@ -67,10 +67,10 @@ router.get('/flickviewercol', function (req, res, next) {
     var cols = [
         {name: 'uploader', value: 'Uploader', type: 'text'},
         {name: 'name', value: 'Name', type: 'text'},
-        {name: 'uploadTime', value: 'Upload time', type: 'text'},
+        {name: 'dateEntered', value: 'Upload time', type: 'text'},
         {name: 'playCount', value: 'Play count', type: 'text'},
-        {name: 'encoded', value: 'Encoded', type: 'text'},
-        {name: 'deleted', value: 'deleted', type: 'text'},
+        {name: 'isEncoded', value: 'Encoded', type: 'text'},
+        {name: 'isDeleted', value: 'deleted', type: 'text'},
         {name: 'encoding', value: 'Encoding', type: 'text'},
         {name: 'encodeProgress', value: 'Progress', type: 'text'},
         {name: 'mediaPath', value: 'Path', type: 'text'}
@@ -89,7 +89,6 @@ router.get('/flickviewer/:limit/:search', function (req, res, next) {
     }
     flicks.listAllSearch(limit, search, function (err, flickList) {
         if (err) {  return next(err); }
-
         res.send(flickList);
     });
 });
@@ -123,11 +122,13 @@ router.get('/flickviewsviewer/:limit/:search', function (req, res, next) {
 router.get('/userviewercol', function (req, res, next) {
     var cols = [
         {name: 'username', value: 'Username', type: 'inputText'},
-        {name: 'forename', value: 'Forename', type: 'inputText'},
+        {name: 'firstName', value: 'First name', type: 'inputText'},
+        {name: 'lastName', value: 'Last name', type: 'inputText'},
         {name: 'emailAddress', value: 'Email', type: 'inputText'},
         {name: 'password', value: 'Password', type: 'inputText'},
-        {name: 'emailConfirmed', value: 'Email confirmed', type: 'inputCheckbox'},
+        {name: 'isConfirmed', value: 'Email confirmed', type: 'inputCheckbox'},
         {name: 'isSysAdmin', value: 'Admin', type: 'inputCheckbox'},
+        {name: 'isDisabled', value: 'Disabled', type: 'inputCheckbox'},
         {name: 'userSave', value: 'Save', type: 'inputSave', handler: 'amendUser'},
         {name: 'userDelete', value: 'Delete', type: 'inputSave', handler: 'deleteUser'}
     ];
@@ -237,27 +238,26 @@ router.put('/user', function (req, res, next) {
             err = new Error('Username exists');
             return next(err);
         }
-        user.create(function (err, usr) {
-            if (err) { return next(err); }
-            if (req.body.username.length === 0 || 
-                req.body.password.length === 0 ||
-                req.body.forename.length === 0 ||
-                req.body.emailAddress.length === 0) {
-                return next(new Error('Some fields are missing'));
-            }
-            usr.username = req.body.username;
-            usr.password = req.body.password;
-            usr.forename = req.body.forename;
-            usr.emailAddress = req.body.emailAddress;
-            usr.isSysAdmin = req.body.isSysAdmin || false;
-            usr.emailConfirmed = req.body.emailConfirmed || false;
 
-            //usr.isSysAdmin = true;
-            usr.customerId = 0;
-            usr.save(function (err) {
-                if (err) { return next(err); }
-                res.send({reply: 'Hello to ' + usr.username});
-            });
+        if (err) { return next(err); }
+        console.log(req.body);
+        if (req.body.username.length === 0 || 
+            req.body.password.length === 0 ||
+            req.body.firstName.length === 0 ||
+            req.body.lastName.length === 0 ||
+            req.body.emailAddress.length === 0) {
+            return next(new Error('Some fields are missing'));
+        }
+        user.username = req.body.username;
+        user.password = req.body.password;
+        user.firstName = req.body.firstName;
+        user.lastName = req.body.lastName;
+        user.emailAddress = req.body.emailAddress;
+        user.isSysAdmin = req.body.isSysAdmin || false;
+        user.isConfirmed = req.body.isConfirmed || false;
+        user.isEnabled = req.body.isEnabled || true;
+        user.create(function (err, usr) {
+            res.send({reply: 'Hello to ' + usr.username});
         });
     });
 });
@@ -266,11 +266,14 @@ router.post('/user', function (req, res, next) {
     var user = new User(req);
     user.load(req.body.userId, function (err, usr) {
         if (err) { return next(err); }
-        user.forename = req.body.forename || user.forename;
+        user.firstName = req.body.firstName || user.firstName;
+        user.lastName = req.body.lastName || user.lastName;
         user.emailAddress = req.body.emailAddress || user.emailAddress;
         user.isSysAdmin = req.body.isSysAdmin || false;
-        if (req.body.emailConfirmed !== undefined) {
-            user.emailConfirmed = req.body.emailConfirmed;
+        user.isDisabled = req.body.isDisabled || false;
+        user.includeDisabled = true;
+        if (req.body.isConfirmed !== undefined) {
+            user.isConfirmed = req.body.isConfirmed;
         }
 
         if (req.body.password !== undefined && req.body.password !== '') {

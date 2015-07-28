@@ -1,0 +1,11 @@
+var settings = {}
+
+settings.sqlServerUsername = 'iflicks';
+settings.sqlServerPassword = 'lorcan1A';
+settings.sqlServerServer = '192.168.0.4';
+settings.sqlServerDatabaseName = 'iflicks';
+settings.nedbPath = '';
+settings.dbTypes = ['nedb', 'sqlserver']; // one of the few settings just for testing
+
+
+module.exports = settings;

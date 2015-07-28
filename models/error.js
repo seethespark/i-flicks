@@ -1,7 +1,7 @@
 // Error code F10
 var Nedb = require('nedb');
 
-var db = new Nedb({ filename: global.iflicks_settings.databasePath + 'errorsdb', autoload: true });
+var db = new Nedb({ filename: global.iflicks_settings.nedbPath + 'errorsdb', autoload: true });
 
 var statsD, error = {};
 
@@ -48,7 +48,7 @@ error.add = function (newError, callback) {
 };
 
 error.list = function (limit, search, callback) {
-    var searchy, where = {};
+    var searchy, i, where = {};
     if (search) {
         searchy = new RegExp(search, 'i');
         where = {error: searchy};
@@ -61,6 +61,7 @@ error.list = function (limit, search, callback) {
                 callback(err, undefined);
                 return;
             }
+            
             callback(undefined, docs);
     });
 };

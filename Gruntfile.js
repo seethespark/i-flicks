@@ -1,4 +1,8 @@
-global.iflicks_settings = require('./settings');
+//global.iflicks_settings = require('./settings');
+
+global.iflicks_settings = require ('./.testSettings');
+require('./lib/nedb.js');
+require('./lib/sqlserver.js');
 
 module.exports = function (grunt) {
     grunt.initConfig({

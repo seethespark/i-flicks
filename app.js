@@ -10,6 +10,7 @@ var compress = require('compression');
 var StatsD = require('statsd-client');
 var session = require('express-session');
 var NedbSession = require('connect-nedb-session-two')(session);
+var StatsD = require('statsd-client');
 
 global.iflicks_settings = require('./settings');
 
@@ -20,8 +21,9 @@ global.iflicks_settings = require('./settings');
 
 /** Return the module */
 module.exports = function ret(sett) {
+    var app = express();
 
-    global.iflicks_settings.databasePath = sett.databasePath || global.iflicks_settings.databasePath || '';
+    global.iflicks_settings.nedbPath = sett.nedbPath || global.iflicks_settings.nedbPath || '';
     global.iflicks_settings.uploadPath = sett.uploadPath || global.iflicks_settings.uploadPath || '';
     global.iflicks_settings.mediaPath = sett.mediaPath || global.iflicks_settings.mediaPath || '';
     global.iflicks_settings.ffmpegPath = sett.ffmpegPath || global.iflicks_settings.ffmpegPath;
@@ -40,23 +42,23 @@ module.exports = function ret(sett) {
     global.iflicks_settings.css = sett.css || global.iflicks_settings.css;
     global.iflicks_settings.env = sett.env || process.env.NODE_ENV;
     global.iflicks_settings.googleAnalyticsId = sett.googleAnalyticsId;
+    global.iflicks_settings.baseURL = sett.baseURL;
+    global.iflicks_settings.databaseType = sett.databaseType || global.iflicks_settings.databaseType;
+    global.iflicks_settings.sqlServerServer = sett.sqlServerServer;
+    global.iflicks_settings.sqlServerUsername = sett.sqlServerUsername;
+    global.iflicks_settings.sqlServerPassword = sett.sqlServerPassword;
+    global.iflicks_settings.sqlServerDatabaseName = sett.sqlServerDatabaseName;
+    global.iflicks_settings.showErrorsInConsole = sett.showErrorsInConsole || global.iflicks_settings.showErrorsInConsole;
 
-    var utils = require('./lib/utils');
-    var runOnce = require('./lib/runOnce');
-    var logger = require('./lib/logger');
-    var routes = require('./routes/index');
-    var upload = require('./routes/upload');
-    var toolbox = require('./routes/toolbox');
-    var script = require('./routes/script');
-    var api = require('./routes/api');
-//    var User = require('./models/user');
-    var security = require('./lib/security');
-
-    global.newVideoNotificationRecipients = [];
-    var statsD, app = express();
-
-    app.enable('strict routing');//???
-
+    /// Setup the global connections
+    if (global.iflicks_settings.databaseType === 'sqlserver') {
+        require('./lib/sqlserver.js');
+    }
+    if (global.iflicks_settings.databaseType === 'nedb') {
+        require('./lib/nedb.js');
+    }
+    app.use(require('./lib/restarting'));
+    /// Setup statsD and attach it to the statsD module for global use. 
     if (global.iflicks_settings.statsDServer !== undefined) {
         var statsDParams = {
             host: global.iflicks_settings.statsDServer,
@@ -65,27 +67,35 @@ module.exports = function ret(sett) {
         };
 
         statsD = new StatsD(statsDParams);
-
-        app.use(function (req, res, next) {
-            //statsD.increment('page_view');
-            /// Make statsD available in our routers
-            req.statsD = statsD;
-            next();
-        });
+        StatsD.globalStatsD = statsD;
 
         /// Add a listener to the end of the request to log the duration
         app.use(function (req, res, next) {
             var start = new Date();
             res.on('finish', function () {
-                req.statsD.timing('page_load', start);
+                statsD.timing('page_load', start);
             });
             next();
         });
     }
+    var utils = require('./lib/utils');
+    var runOnce = require('./lib/runOnce');
+    var logger = require('./lib/logger');
+    var routes = require('./routes/index');
+    var upload = require('./routes/upload');
+    var toolbox = require('./routes/toolbox');
+    var script = require('./routes/script');
+    var api = require('./routes/api');
+    var security = require('./lib/security');
+
+    global.newVideoNotificationRecipients = [];
+
+    app.enable('strict routing');//???
+
 
     ///// NOTE::: Enocde currently unreliable when called this way.
     utils.cleanMedia();
-    utils.encode(statsD);
+    utils.encode();
     utils.pingNewVideo();
 
     // view engine setup
@@ -176,7 +186,7 @@ module.exports = function ret(sett) {
                 res.send({error: err.message});
             } else {
                 res.render('error', {
-                    message: err.message,
+                    message: err.message + ' ' + err.code,
                     error: err,
                     css: global.iflicks_settings.css
                 });

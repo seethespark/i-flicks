@@ -141,8 +141,8 @@ window.iflicks = (function iflicks(settings) {
         el.classList.add('hide');
     }
 
-        /// Show the upload form
-    function showHideElement(elementName) {
+    /// Show the upload form
+    function showHideElement1(elementName) {
         var el = document.getElementById(elementName);
         if (el.className.indexOf('hide') > -1) {
             el.classList.remove('hide');
@@ -150,6 +150,29 @@ window.iflicks = (function iflicks(settings) {
             el.classList.add('hide1');
             setTimeout(function () { el.classList.remove('hide1'); el.classList.add('hide'); }, 300);
         }
+    }
+    /// Show the upload form
+    function showHideElement(elementName, height) {
+        height = height || '200px';
+        var el = document.getElementById(elementName);
+        if (el.style.height === '0px' || el.style.height === '') {
+            el.style.height = height;
+            el.style.opacity = 1;
+            walkTheDom(el, function(el) { if (el.style) {el.style.opacity = 1;} });
+        } else {
+            el.style.height = '0px';
+            el.style.opacity = 0;
+            walkTheDom(el, function(el) { if (el.style) {el.style.opacity = 0;} });
+        }
+        /*
+        if (el.classList.contains('hide')) {
+            el.classList.add('show');
+            el.classList.remove('hide');
+        } else {
+            el.classList.add('hide');
+            el.classList.remove('show');
+            //setTimeout(function () { el.classList.remove('hide1'); el.classList.add('hide'); }, 300);
+        }*/
     }
 
     function setOption(option, value) {
@@ -178,7 +201,7 @@ window.iflicks = (function iflicks(settings) {
         if (time > video.fileDetail.duration - 5) {
             time = 0;
         }
-        window.fetch('/timeupdate/' + video._id + '/' + time, {
+        window.fetch('/timeupdate/' + video.id + '/' + time, {
             credentials: 'include',
             method: 'POST',
             headers: {
@@ -265,7 +288,11 @@ window.iflicks = (function iflicks(settings) {
             }
         });
         for (i = 0; i < elList.length; i++) {
-            imageData.append(elList[i].name, elList[i].value);
+            if (elList[i].name && elList[i].type === 'checkbox') {
+                imageData.append(elList[i].name, elList[i].checked);
+            } else if (elList[i].name) {
+                imageData.append(elList[i].name, elList[i].value);
+            }
         }
 
         uploadProgress.classList.remove('hide');
@@ -592,7 +619,7 @@ window.iflicks = (function iflicks(settings) {
             vidPublicCheck.id = 'videoPublicCheck';
             vidPublicCheck.type = 'checkbox';
             vidPublicCheck.name = 'public';
-            vidPublicCheck.checked = currentVideoDetail.public;
+            vidPublicCheck.checked = currentVideoDetail.isPublic;
             hide(vidPublicElement);
             vidPublicElement.appendChild(vidPublicCheck);
             videoText.appendChild(vidPublicElement);
@@ -605,7 +632,7 @@ window.iflicks = (function iflicks(settings) {
             vidDirectLinkCheck.id = 'videoDirectLinkCheck';
             vidDirectLinkCheck.type = 'checkbox';
             vidDirectLinkCheck.name = 'directLink';
-            vidDirectLinkCheck.checked = currentVideoDetail.directLink;
+            vidDirectLinkCheck.checked = currentVideoDetail.isDirectLinkable;
             hide(vidDirectLinkElement);
             vidDirectLinkElement.appendChild(vidDirectLinkCheck);
             videoText.appendChild(vidDirectLinkElement);
@@ -628,7 +655,7 @@ window.iflicks = (function iflicks(settings) {
         }
 
         for (i = 0; i < videoListMaster.length; i++) {
-            if (videoListMaster[i]._id === vid) {
+            if (videoListMaster[i].id === vid) {
                 currentVideoDetail = videoListMaster[i];
                 break;
             }
@@ -707,7 +734,7 @@ window.iflicks = (function iflicks(settings) {
             vidName.className = 'vidName';
             vidDelete.className = 'fa fa-trash-o vidDelete';
             //vidLoadingThumb.src = loadingImage.src;
-            vidThumb.src = '/thumb/' + vid._id + '/thumb';
+            vidThumb.src = '/thumb/' + vid.id + '/thumb';
             addListener(vidThumb, 'error', false, function () { vidThumb.src = '/img/missing.png'; });
             addListener(vidThumb, 'load', false, function () {
             //vidThumb.addEventListener('load', 
@@ -740,7 +767,6 @@ window.iflicks = (function iflicks(settings) {
             function vidContainerClick() {
                 var vidName, currentState = window.history.state || {};
                 vidName = vid.name || '-';
-                console.log(vid);
                 vidName = vidName.replace(' ', '_');
                 currentState.method = 'listVideos';
                 currentState.scrollTop = document.body.scrollTop;
@@ -748,10 +774,10 @@ window.iflicks = (function iflicks(settings) {
                 currentState.limit = vids.limit;
                 currentState.search = vids.search;
                 window.history.replaceState(currentState, 'List video', '');
-                window.history.pushState({method: 'showVideo', vid: vid._id}, 'Show video', '/' + vidName + '/' + vid._id);
-                showVideo(vid._id);
+                window.history.pushState({method: 'showVideo', vid: vid.id}, 'Show video', '/' + vidName + '/' + vid.id);
+                showVideo(vid.id);
             }
-            if (vid.encoded === true) {
+            if (vid.isEncoded === true) {
                 /*addListener(vidContainer, 'click', true, 
                 //vidContainer.onclick = 
                     function () {
@@ -792,10 +818,10 @@ window.iflicks = (function iflicks(settings) {
             //vidDelete.onclick = 
                 function (e) {
                     clearTimeout(pressTimer);
-                    deleteVideo(vid._id);
+                    deleteVideo(vid.id);
                     videoList.removeChild(vidContainer);
                     for (j = 0; j < videoListMaster.length; j++) {
-                        if (videoListMaster[j]._id === vid._id) {
+                        if (videoListMaster[j].id === vid.id) {
                             videoListMaster.splice(j, 1);
                             break;
                         }
@@ -875,7 +901,9 @@ window.iflicks = (function iflicks(settings) {
                     return response.json();
                 })
                 .then(function (json) {
-                    if (Array.isArray(json.data)) {
+                    if (json.error !== undefined) {
+                        showMessage(json.error, 'listUnencoded.fetchVideoList', 6);
+                    } else if (Array.isArray(json.data)) {
                         videoListMaster = json;
                         listVideosShow(videoListMaster);
                     } else {
@@ -940,7 +968,9 @@ window.iflicks = (function iflicks(settings) {
                     return response.json();
                 })
                 .then(function (json) {
-                    if (Array.isArray(json.data)) {
+                    if (json.error !== undefined) {
+                        showMessage(json.error, 'listUnencoded.getUnencoded', 6);
+                    } else if (Array.isArray(json.data)) {
                         listVideosShow(json);
                     } else {
                         showMessage('Non array type returned.', 'listUnencoded.getUnencoded', 6);
@@ -985,6 +1015,10 @@ window.iflicks = (function iflicks(settings) {
                     readyToSend = false;
                     showMessage(el.name + ' is required.', 'addUserHandler', 5);
                 }
+                if (el.name === 'emailAddress' && /\S+@\S+\.\S+/.test(el.value) === false) {
+                    readyToSend = false;
+                    showMessage('Email should be an email address.', 'addUserHandler', 5);
+                }
             } else if (el.type === 'checkbox') {
                 newUser[el.name] = el.checked;
             }
@@ -1008,6 +1042,7 @@ window.iflicks = (function iflicks(settings) {
                 } else if (json.reply) {
                     showMessage(json.reply, 'addUserHandler.fetchUser1', 7);
                     showHideElement('createAccountContainer');
+                    document.getElementById('username').value = newUser.username;
                 } else {
                     showMessage('Unexpected response', 'addUserHandler.fetchUser2', 10);
                 }
@@ -1065,7 +1100,6 @@ window.iflicks = (function iflicks(settings) {
     /// Login
     function postLogin() {
         if (Object.getOwnPropertyNames(user).length > 0) {
-
             if (!user.options) { user.options = {}; }
             if (user.options.volume && vjs) {
                 vjs.volume(user.options.volume);
@@ -1073,14 +1107,18 @@ window.iflicks = (function iflicks(settings) {
 
             document.getElementById('loggedinContainer').style.display = 'inline-block';
             document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('headerBarUserName').textContent  = 'Hello ' + user.forename;
+            document.getElementById('headerBarUserName').textContent  = 'Hello ' + user.firstName;
+            if (user.gravatarUrl) {
+                document.getElementById('headerBarAvatar').src  = user.gravatarUrl;
+            }
+            
             document.getElementById('message').textContent  = '';
             listVideosShow(videoListMaster);
             /// Dopn't show the upload button in <=IE9
             if (window.FormData === undefined) {
                 document.getElementById('showUploadContainer').style.display = 'none';
             }
-            if (user.emailConfirmed !== true) {
+            if (user.isConfirmed !== true) {
                 document.getElementById('showUploadContainer').style.display = 'none';
             }
             
@@ -1126,7 +1164,7 @@ window.iflicks = (function iflicks(settings) {
             }
         })
             .then(function (response) {
-                if (response.status === 401) { return {}; }
+                if (response.status !== 200) { return {}; }
                 return response.json();
             })
             .then(function (json) {
@@ -1264,8 +1302,8 @@ window.iflicks = (function iflicks(settings) {
                     currentTime = vjs.currentTime();
                     isPaused = vjs.paused();
                     vjs.dimensions(vidDims.videoWidth, vidDims.videoHeight);
-                    vjs.src([{type: 'video/mp4', src: '/video/' + currentVideoDetail._id + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() },
-                            {type: 'video/webm', src: '/video/' + currentVideoDetail._id + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() }
+                    vjs.src([{type: 'video/mp4', src: '/video/' + currentVideoDetail.id + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() },
+                            {type: 'video/webm', src: '/video/' + currentVideoDetail.id + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() }
                         ]);
                     vjs.currentTime(currentTime);
                     if (!isPaused) {

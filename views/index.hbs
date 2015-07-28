@@ -2,11 +2,13 @@
 		<a href="/" name="Home">
 			<div id="logo">
 				<img id="logoImage" src="/img/logo.png" width="80" height="60" alt="i-flicks logo">
-				<span id="logoText">I-FLICKS</span>
+				<img id="logoText" src="/img/logo_word.png" width="120px" height="41px" alt="i-flicks text logo">
+				<!-- <span id="logoText">I-FLICKS</span> -->
 			</div>
 		</a>
 		<span id="message" class="message"></span>
 		<span id="headerBarUserName"></span>
+		<img id="headerBarAvatar"></img>
 		<input type="text" id="search" name="search" placeholder="Search...">
 		<input type="button" id="submitSearch" value="Search" class="button">
 		<span id="loggedinContainer">
@@ -39,7 +41,7 @@
 			<br><br><br>
 			<label for="tags">Tags (comma seperate):</label><input type="text" id="fileTags" name="tags" class="uploadContainer">
 			<br>
-			<label for="emailWhenEncoded">Email when complete:</label><input type="checkbox" id="emailWhenEncoded" name="emailComplete" class="uploadContainer">
+			<label for="emailWhenEncoded">Email when complete:</label><input type="checkbox" id="emailWhenEncoded" name="emailWhenEncoded" class="uploadContainer">
 			<br>
 			<!--<label for="videoFile">File to upload
 				<div id="uploadContainerFile">Select file
@@ -48,10 +50,10 @@
 			</label>
 			-->
 			<label for="videoFile">File to upload</label><input type="file" name="video" id="videoFile" class="uploadContainer button"> 
-			<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
+			<!--<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
 			<video id="thumbVid" src="/" class="hide" width="70" height="40" controls>
 			</video>
-			<br>
+			<br>-->
 			<input type="button" id="submitUploadNewVideo" value="Send" class="button">
 			<progress id="uploadProgress" class="hide" value="0" max="1"></progress>
 			<span id="messageUploadVid" class="message"></span>
@@ -59,19 +61,21 @@
 	</div>
 	{{#if usersCanCreateAccount }}
 	<div id="createAccountContainer" class="hide">
-		<label for="username">Username:</label><input type="text" id="createUsername" name="username" class="createAccountContainer" placeholder="Username">
-		<br>
-		<label for="createFirstname">First Name:</label><input type="text" id="createFirstname" name="firstname"  class="createAccountContainer" placeholder="First name">
-		<br>
-		<label for="createLastname">Last name:</label><input type="text" id="createLastname" name="lastname"  class="createAccountContainer" placeholder="Last Name">
-		<br>
-		<label for="createEmail">Email:</label><input type="text" id="createEmail" name="emailAddress"  class="createAccountContainer" placeholder="Email address">
-		<br>
-		<label for="createPassword">Password:</label><input type="text" id="createPassword" name="password"  class="createAccountContainer" placeholder="Password">
-		<br>
+		<form id="createAccountForm">
+			<label for="username">Username:</label><input type="text" id="createUsername" name="username" class="createAccountContainer" placeholder="Username">
+			<br>
+			<label for="createFirstname">First Name:</label><input type="text" id="createFirstname" name="firstName"  class="createAccountContainer" placeholder="First name">
+			<br>
+			<label for="createLastname">Last name:</label><input type="text" id="createLastname" name="lastName"  class="createAccountContainer" placeholder="Last Name">
+			<br>
+			<label for="createEmail">Email:</label><input type="text" id="createEmail" name="emailAddress"  class="createAccountContainer" placeholder="Email address">
+			<br>
+			<label for="createPassword">Password:</label><input type="text" id="createPassword" name="password"  class="createAccountContainer" placeholder="Password">
+			<br>
 
-		<input type="button" id="submitCreateAccount" value="Create" class="button">
-		<span id="messageCreateAcc" class="message"></span>
+			<input type="button" id="submitCreateAccount" value="Create" class="button">
+			<span id="messageCreateAcc" class="message"></span>
+		</form>
 	</div>
 	{{/if}}
 	<div id="videoList"></div>
@@ -90,7 +94,7 @@
       nope: '/script/promise.js'
   	  },
       {
-      test: Modernizr.History,
+      test: Modernizr.history,
       nope: '/script/history.js'
       },
       {

@@ -175,7 +175,7 @@ var iflicks = (function iflicks() {
             match = false;
             //errorList.every(checkErrorExists);
             for (j = rowList.length - 1; j > -1; j--) {
-                if (rowList[j]._id === row.id) {
+                if (rowList[j].id === row.id || rowList[j]._id === row.id) {
                     if (!updateable) {
                         rowList.splice(j, 1);
                     } else {
@@ -195,7 +195,7 @@ var iflicks = (function iflicks() {
             for (i = tableBody.getElementsByTagName('tr').length - 1; i > -1; i--) {
                 row = tableBody.rows[i];
                 for (j = 0; j < rowList.length; j++) {
-                    if (rowList[j]._id === row.id) {
+                    if (rowList[j].id === row.id || rowList[j]._id === row.id) {
                         if (row.title !== JSON.stringify(rowList[j])) {
                             row.title = JSON.stringify(rowList[j]);
                         }
@@ -203,7 +203,7 @@ var iflicks = (function iflicks() {
                             if (colList[k].type === 'text') { /// only text type column will update
                                 match = false;
                                 for (l in rowList[j]) {
-                                    if (rowList[j]._id + l === row.cells[k].id) {
+                                    if (rowList[j].id + l === row.cells[k].id || rowList[j]._id + l === row.cells[k].id) {
                                         match = true;
                                         // check they match and update accordingly
                                         if (rowList[j][l].toString() !== row.cells[k].textContent) {
@@ -227,7 +227,7 @@ var iflicks = (function iflicks() {
         var cellTextNode, col;
         rowList.forEach(function (roww) {
             row = tableBody.insertRow(0);
-            row.id = roww._id;
+            row.id = roww.id || roww._id;
             row.title = JSON.stringify(roww);
             for (i = 0; i < colList.length; i++) {
                 col = colList[i];
@@ -237,7 +237,7 @@ var iflicks = (function iflicks() {
                     cellText = roww[col.name];
                 }
                 cell = row.insertCell(-1);
-                cell.id = roww._id + col.name;
+                cell.id = row.id + col.name;
                 if (col.type === 'text') {
                     cellTextNode = document.createTextNode(cellText);
                 } else if (col.type === 'inputText') {
@@ -353,7 +353,7 @@ var iflicks = (function iflicks() {
                     fetchy('/toolbox/userviewer/' + limit + '/' + search, function (flickList) {
                         displayTableBody(flickList, colList, true, 'list');
                     });
-                }, 5000);
+                }, 30000);
             });
         });
         function addUserForm(colList) {

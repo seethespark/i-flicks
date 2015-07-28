@@ -3,7 +3,7 @@ var router = express.Router();
 var fs = require('fs');
 var path = require('path');
 var multer = require('multer');
-var flick = require('../models/flick');
+var Flick = require('../models/flick');
 /**
  * upload module.
  * @module upload
@@ -25,31 +25,41 @@ router.put('/:filename',
                 res.status(500).send('Error: Name must be supplied.');
                 res.end();
                 return;
-            }            
-            if (req.user.emailConfirmed !== true) {
+            }
+            if (req.user.isConfirmed !== true) {
                 res.status(500).send('Error: email not confirmed.');
                 res.end();
                 return;
             }
-            var doc, storageName;
-            storageName = file.name.substring(0, file.name.lastIndexOf('.'));
+            var doc, folderName;
+            folderName = file.name.substring(0, file.name.lastIndexOf('.'));
 
-            doc = {
-                uploader: req.user.id,
-                name: req.body.name,
-                tags: req.body.tags,
-                description: req.body.description,
+            var flick = new Flick();
+            flick.userId = req.user.id;
+            flick.name = req.body.name;
+            flick.tags = req.body.tags;
+            flick.description = req.body.description;
+            flick.folderName = folderName;
+            flick.originalName = file.originalname;
+            flick.isEncoding = false;
+            flick.isEncoded = false;
+            flick.isPublic = false;
+            flick.isDirectLinkable = false;
+            flick.sourcePath = file.path;
+            flick.originalname = file.originalname;
+            flick.emailWhenEncoded = req.body.emailWhenEncoded;
+            /*doc = {
+ 
                 emailComplete: req.body.emailComplete,
                 storageName: storageName,
                 path: file.path,
                 originalname: file.originalname
-            };
-            if (req.body.emailComplete === 'on') {
-                doc.emailOnEncode = true;
-            }
-            flick.setStatsD(req.statsD);
-            flick.add(doc, function (err) {
-                if (err) { err.code = 'F04001'; return (err); }
+            };*/
+            console.log(req.body);
+            //flick.setStatsD(req.statsD);
+
+            flick.create(function (err) {
+                if (err) { console.log(err); err.code = err.code || 'F04001'; return (err); }
             });
         }
     }),
@@ -61,7 +71,10 @@ router.put('/:filename',
         } else if (req.body.name === undefined || req.body.name === '') {
             console.log('No name');
             res.status(500).send('Error: Name must be supplied.');
-        } else {
+        } else if (req.user.isConfirmed !== true) {
+            console.log('Email not confirmed');
+            res.status(500).send('Error: email not confirmed.');
+        }else {
             res.status(202).send('Received and now encoding.');
         }
     });

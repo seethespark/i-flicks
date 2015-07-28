@@ -16,8 +16,9 @@ a {
 	/*background: -webkit-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* Chrome10+,Safari5.1+ */
 	/*background: -o-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* Opera 12+ */
 	/*background: -ms-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* IE10+ */
-	background: radial-gradient(ellipse at center,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%); /* W3C */
+	/*background: radial-gradient(ellipse at center,  rgba(255,255,255,1) 0%,rgba(237,237,237,1) 35%,rgba(255,255,255,1) 100%);*/ /* W3C */
 	/*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=1 );*/ /* IE6-9 fallback on horizontal gradient */
+	background: radial-gradient(ellipse at center, rgb(255,255,255) 0%,rgb(180,180,206) 0%,rgb(255,255,255) 69%);
 }
 #logoText {
 	color: black;

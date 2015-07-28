@@ -1,322 +1,208 @@
 // Error code F04
-var Nedb = require('nedb');
-var path = require('path');
-var fs = require('fs');
+var flickDb, FlickDb;
+if (global.iflicks_settings.databaseType === 'nedb') {
+    FlickDb = require('./flicknedb');
+} else if (global.iflicks_settings.databaseType === 'sqlserver') {
+    FlickDb = require('./flicksqlserver');
+} else {
+    throw new Error('Database type not set');
+}
 
-/** 
- * Programmatic representation of a flick, or video.
- * 
- * @module flick
+flickDb = new FlickDb();
+
+
+/**
+ * Load a flick from the database into the main object
+ * @param {string} flickId
+ * @param {Requester~requestCallback} callback
  */
-
-
-var db = new Nedb({ filename: global.iflicks_settings.databasePath + 'iflicksdb', autoload: true });
-var dbView = new Nedb({ filename: global.iflicks_settings.databasePath + 'iflicksviewdb', autoload: true });
-
-var statsD, flick = {};
-
-flick.db = db;
-flick.dbView = dbView;
-
-flick.setStatsD = function (statsd) {
-    statsD = statsd;
-};
-
-/** 
- * Get the thumbnail path of a flick
- * @param {string} id - The ID of the flick.
- */
-flick.thumb = function (id, fileName, user, callback) {
-    var where, userId, tmpThubmnailPath, dbStartTime = new Date();
-    user = user || {};
-    where = {_id: id };
-    if (user.isSysAdmin) {
-        // Do nothing
-    } else if (user.id) {
-        userId = user.id || 'zzzzzzzzzzzzzzzz'; // the user columns could be undefined
-        where.$or =  [{userId: userId}, {uploader: userId}, {public: true}, {directLink: true} ];
-    } else {
-        where.$or =  [{public: true}, {directLink: true} ];
-
-    }
-    db.findOne(where, /*{_id: 1, name: 1, description: 1},*/ function (err, doc) {
-        if (statsD) {
-            statsD.timing('db.flick.thumb', dbStartTime);
+function load(flickId, userId, isSysAdmin, callback) {
+    var flick = this, key;
+    flickDb.getFlickById(flickId, userId, isSysAdmin, function (err, result) {
+        if (err) { err.code = err.code || 'F04022'; callback(err, undefined); return; }
+        flick.changes = [];
+        flick.trackChanges = false;
+        for (key in result) {
+            if (result.hasOwnProperty(key)) {
+                flick[key] = result[key];
+            }
         }
-        if (err) { callback(err, undefined); return; }
-        if (doc === null) {
-            err = new Error('Missing flick.');
-            err.status = 404;
+        flick.trackChanges = true;
+        callback(err, flick);
+    });
+}
+
+
+/**
+ * Logically delete a flick in the database.  No hard delete is run.
+ * @param {Requester~requestCallback} callback
+ */
+function deleteFlick(callback) {
+    var flick = this;
+    if (flick.id === undefined || flick.id === null) {
+        var err = new Error('Flick ID is not defined');
+        if (callback) {
             callback(err, undefined);
-            return;
         }
-        tmpThubmnailPath = doc.mediaPath + '/' + fileName + '.jpg';
+        return;
+    }
 
-        fs.stat(tmpThubmnailPath, function (err, stat) {
-            if (err) {
-                callback(undefined, doc.mediaPath + '/thumb.jpg');
-            } else {
-                callback(undefined, tmpThubmnailPath);
-            }
-        });
+    flickDb.updateFlick({id: flick.id, isDeleted: true}, function (err, result) {
+        callback(err, result);
     });
-};
+}
 
-flick.load = function (id, user, callback) {
-    try {
-        var where, userId, dbStartTime = new Date();
-        user = user || {};
-        where = {_id: id };
-        if (user.isSysAdmin) {
-            // Do nothing
-        } else if (user.id) {
-            userId = user.id || 'zzzzzzzzzzzzzzzz'; // the user columns could be undefined
-            where.$or =  [{userId: userId}, {uploader: userId}, {public: true}, {directLink: true} ];
+/**
+ * Insert a flick into the database.  it uses the values from the Flick object
+ * @param {Requester~requestCallback} callback
+ */
+function create(callback) {
+    var flick = this;
+    flickDb.insertFlick(flickDb.flickFromDatabase(flick), function (err, id) {
+        flick.id = id;
+        flick.changes = [];
+        flick.trackChanges = true;
+        callback(err, flick.id);
+    });
+}
+
+/**
+ * Save a flick to the database.  Uses info from the main object.
+ * @param {Requester~requestCallback} callback
+ */
+function save(callback) {
+    var flick = this;
+    flickDb.updateFlick(flickDb.flickFromDatabase(flick), function(err) {
+        if (err) {
+            callback(err, undefined);
         } else {
-            where.$or =  [{public: true}, {directLink: true} ];
-        }
-        db.findOne(where, /*{_id: 1, name: 1, description: 1},*/ function (err, doc) {
-            if (statsD) {
-                statsD.timing('db.flick.load', dbStartTime);
-            }
-            if (err) { callback(err, undefined); return; }
-            if (doc === null) {
-                err = new  Error('Missing flick');
-                err.status = 401;
-                err.code = 'F04005';
-                callback(err, undefined); 
-                return;
-            }
-            flick._id = doc._id;
-            flick.userId = doc.userId || doc.uploader;
-            flick.name = doc.name;
-            flick.description = doc.description;
-            flick.playCount = doc.playCount;
-            flick.fileDetail = doc.fileDetail;
-            flick.rating = doc.rating;
-            callback(undefined, doc);
-        });
-    } catch (ex) {
-        ex.code = 'F04002';
-        callback(ex);
-    }
-};
-
-
-flick.play = function (id, callback) {
-    try {
-        var dbStartTime = new Date();
-        db.update({_id: id}, { $inc: { playCount: 1 } }, function (err) {
-            if (statsD) {
-                statsD.timing('db.flick.play', dbStartTime);
-            }
-            if (err) { callback(err); return; }
-            callback();
-        });
-    } catch (ex) {
-        ex.code = 'F04003';
-        callback(ex);
-    }
-};
-
-flick.rating1 = function (id, userId, ratingValue, callback) {
-    try {
-        var dbStartTime = new Date();
-        db.update({_id: id}, { $set: { rating: ratingValue } }, function (err) {
-            if (statsD) {
-                statsD.timing('db.flick.rating', dbStartTime);
-            }
-            if (err) { callback(err); return; }
-            callback();
-        });
-    } catch (ex) {
-        console.log(ex);
-        ex.code = 'F04004';
-        callback(ex);
-    }
-};
-
-flick.view = function (req, callback) {
-    try {
-        var dbStartTime = new Date(), doc = {}, flickId, ip, userId;
-        if (req.user && req.user.id) {
-            userId = req.user.id;
-        } else {
-            userId = 'Anonymous';
-        }
-        flickId = req.params.id || req.body.id;
-        console.log();
-        ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
-        doc = {
-            flickId: flickId,
-            userId: userId,
-            ipAddress: ip,
-            dateEntered: new Date()
-        };
-
-        dbView.insert(doc, function (err, newDoc) {
-            if (statsD) {
-                statsD.timing('db.flick.view', dbStartTime);
-            }
-            if (err) { callback(err); return; }
-            callback();
-        });
-    } catch (ex) {
-        ex.code = 'F04001';
-        callback(ex);
-    }
-};
-
-flick.add = function (newFlick, callback) {
-    var dbStartTime = new Date(), doc = {};
-    doc = {
-        uploader: newFlick.uploader,
-        name: newFlick.name || 'unknown',
-        description: newFlick.description || '',
-        emailComplete: newFlick.emailComplete,
-        uploadTime: new Date(),
-        storageName: newFlick.storageName || 'unknown',
-        path: newFlick.path || 'unknown',
-        originalname: newFlick.originalname || 'unknown',
-        playCount: 0,
-        encoded: newFlick.encoded || false,
-        rating: newFlick.rating,
-        fileDetail: newFlick.fileDetail,
-        mediaPath: newFlick.mediaPath || 'unknown'
-    };
-
-    db.insert(doc, function (err, newDoc) {
-        if (statsD) {
-            statsD.timing('db.flick.insert', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback(undefined, newDoc._id);
-    });
-};
-
-flick.remove = function (id, callback) {
-    var dbStartTime = new Date();
-    db.update({_id: id}, { $set: { deleted: true} }, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.remove', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback();
-    });
-};
-
-flick.unremove = function (id, callback) {
-    var dbStartTime = new Date();
-    db.update({_id: id}, { $pull: { deleted: true} }, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.unremove', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback();
-    });
-};
-
-flick.delete = function (id, callback) {
-    var dbStartTime = new Date();
-    db.remove({_id: id}, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.delete', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback();
-    });
-};
-
-flick.setFileDetails = function (id, fileDetail, callback) {
-    var dbStartTime = new Date();
-    db.update({_id: id}, {
-        $set: { fileDetail: fileDetail }
-    }, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.setFileDetails', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback();
-    });
-};
-
-flick.encodeStart = function (id, mediaPath, callback) {
-    var dbStartTime = new Date();
-    db.update({_id: id}, {
-        $set: { encoding: true, encodeProgress: 0, mediaPath: mediaPath, pathToThumbnail: path.join(mediaPath, 'thumb.png') }
-    }, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.encodeStart', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback();
-    });
-};
-
-flick.encodeProgress = function (id, progressPercent, callback) {
-    var dbStartTime = new Date();
-    db.update({_id: id}, { $set: { encodeProgress: progressPercent } }, function (err) {
-        if (statsD) {
-            statsD.timing('db.flick.encodeProgress', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback();
-    });
-};
-
-flick.encodeComplete = function (id, callback) {
-    var dbStartTime = new Date();
-    db.update({ _id: id }, {
-        $set: { encoded: true },
-        $unset: { path: true, encodeProgress: true, encoding: true }
-    },
-        {},
-        function (err, numReplaced) {
-            if (statsD) {
-                statsD.timing('db.flick.encodeComplete', dbStartTime);
-            }
-            if (err) { callback(err, undefined); return; }
-            if (numReplaced !== 1) { err = new Error(numReplaced + ' rows updated. this should be 1');  callback(err, undefined); return; }
-            callback();
-        });
-};
-
-flick.comment = function (id, callback) {};
-
-flick.exists = function (storageName, callback) {
-    var dbStartTime = new Date();
-    db.find({storageName: storageName}, function (err, docs) {
-        if (statsD) {
-            statsD.timing('db.flick.exists', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        if (docs.length > 0) {
+            flick.changes = [];
             callback(undefined, true);
-
-        } else {
-            callback(undefined, false);
         }
     });
-};
+}
 
-/// once stable this should specify which properties to update rather than just adding all properties which aren't unctions
-flick.save = function (callback) {
-    //console.log(flick);
-    var key, updateObj = {}, dbStartTime = new Date();
-    for (key in flick) {
-        if (flick.hasOwnProperty(key) && (typeof flick[key] === 'string' || typeof flick[key] === 'number' || typeof flick[key] === 'boolean') && key !== '_id') {
-            updateObj[key] = flick[key];
+/**
+ * Record a play of a video.  This should probably have an IP or user based check to prevent spam.
+ * @param {Requester~requestCallback} callback
+ */
+function play(ipAddress, callback) {
+    var flick = this;
+    if (flick.id === undefined || flick.id === null) {
+        var err = new Error('Flick ID is not defined');
+        callback(err, undefined);
+        return;
+    }
+    flick.playCount++;
+    flickDb.updateFlick({id: flick.id, playCount: flick.playCount}, function (err, result) {
+        ///// Add an entry into the usage table
+        callback(err, flick.playCount);
+    });
+}
+
+/**
+ * Set the current user's rating.  Compiling ratings is an offline operation.
+ * @param {Requester~requestCallback} callback
+ */
+function suggestRating(rating, userId, ipAddress, callback) {
+    var flick = this;
+    if (flick.id === undefined || flick.id === null) {
+        var err = new Error('Flick ID is not defined');
+        callback(err, undefined);
+        return;
+    }
+
+    flickDb.addRating(flick.id, rating, userId, ipAddress, function (err, result) {
+        callback(err, result);
+    });
+}
+
+
+
+/**
+ * Flick constructor
+ */
+var Flick = function (id, user, callback) {
+    var changes,  flick = {};
+    flick.trackChanges = false;
+    if (id !== undefined) {
+        this.load(id, user.id, user.isSysAdmin, function () {});
+    }
+
+    /**
+     * Flick.change
+     * @param {string} property - Append to an array to keep track of object changes.  Limits the number of updates required on a database.
+     */
+    function change (property) {
+       // console.log('property', property, flick.trackChanges)
+        if (flick.trackChanges && changes === undefined) {
+            changes = [property];
+        } else if (flick.trackChanges && changes.indexOf(property) === -1) {
+            changes.push(property);
         }
     }
-    db.update({_id: flick._id}, { $set: updateObj }, function (err, rows) {
-        if (statsD) {
-            statsD.timing('db.flick.save', dbStartTime);
-        }
-        if (err) { callback(err, undefined); return; }
-        callback(undefined, rows);
-    });
+
+    return {
+        get id() {return flick.id; },
+        set id(value) { flick.id = value; },
+        get trackChanges() {return flick.trackChanges; },
+        set trackChanges(value) { flick.trackChanges = value; },
+        get changes() {return changes; },
+        set changes(value) { changes = value; },
+        get uploader() {return flick.uploader; },
+        set uploader(value) { flick.uploader = value; change('uploader'); },
+        get userId() {return flick.userId; },
+        set userId(value) { flick.userId = value; change('userId'); },
+        get name() {return flick.name; },
+        set name(value) { flick.name = value; change('name'); },
+        get description() {return flick.description; },
+        set description(value) { flick.description = value; change('description'); },
+        get emailWhenEncoded() {return flick.emailWhenEncoded; },
+        set emailWhenEncoded(value) { flick.emailWhenEncoded = value; change('emailWhenEncoded'); },
+        get originalName() {return flick.originalName; },
+        set originalName(value) { flick.originalName = value; change('originalName'); },
+        //get thumbnailPath() {return (flick.thumbnailPath || flick.mediaPath + '\\thumb.jpg'); },
+        get thumbnailPath() { if (flick.mediaPath == undefined && flick.thumbnailPath == undefined) {return undefined;} else {return flick.mediaPath + '\\thumb.jpg'; } },
+        set thumbnailPath(value) { flick.thumbnailPath = value; change('thumbnailPath'); },
+        get isEncoded() {return flick.isEncoded; },
+        set isEncoded(value) { flick.isEncoded = value; change('isEncoded'); },
+        get isDeleted() {return flick.isDeleted; },
+        set isDeleted(value) { flick.isDeleted = value; change('isDeleted'); },
+        get isDirectLinkable() {return flick.isDirectLinkable; },
+        set isDirectLinkable(value) { flick.isDirectLinkable = value; change('isDirectLinkable'); },
+        get isPublic() {return flick.isPublic; },
+        set isPublic(value) { flick.isPublic = value; change('isPublic'); },
+        get folderName() {return flick.folderName; },
+        set folderName(value) { flick.folderName = value; change('folderName'); },
+        get mediaPath() {return flick.mediaPath; },
+        set mediaPath(value) { flick.mediaPath = value; change('mediaPath'); },
+        get fileDetail() {return flick.fileDetail; },
+        set fileDetail(value) { flick.fileDetail = value; change('fileDetail'); },
+        get isEncoding() {return flick.isEncoding; },
+        set isEncoding(value) { flick.isEncoding = value; change('isEncoding'); },
+        get encodingProgress() {return flick.encodingProgress; },
+        set encodingProgress(value) { flick.encodingProgress = value; change('encodingProgress'); },
+        get tags() {return flick.tags; },
+        set tags(value) { flick.tags = value; change('tags'); },
+        get playCount() {return flick.playCount; },
+        set playCount(value) { flick.playCount = value; change('playCount'); },
+
+        get forBrowser() {return {
+            id: flick.id,
+            name: flick.name,
+            description: flick.description,
+            fileDetail: flick.fileDetail,
+            tags: flick.tags,
+            playCount: flick.playCount
+        }; },
+
+        suggestRating: suggestRating,
+        load: load,
+        create: create,
+        save: save,
+        delete: deleteFlick,
+        play: play
+    };
 };
 
-
-
-module.exports = flick;
+module.exports = Flick;

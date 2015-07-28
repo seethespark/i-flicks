@@ -1,7 +1,7 @@
 body {
   	padding: 0px;
-
   	margin: 0px;
+  	overflow-y: scroll;
 }
 
 .editable::before {
@@ -23,16 +23,30 @@ body {
     50% { opacity: 0.0; }
     100% { opacity: 1.0; }
 }
-.hide {
+.hidexx {
 	display: none;
 	border: thick solid red;
 }
-.hide1 {
+.hide1xx {
 	opacity: 0;
 	/*max-height: 0px;
 	transition: max-height 0.5s;*/
 	transition: opacity 0.5s;
 	overflow: hidden;
+}
+
+.hide {
+	height: 0px;
+	opacity: 0;
+	overflow: hidden;
+
+	/* Set our transitions up. */
+	-webkit-transition: height 0.8s, opacity 0.8s;
+	-moz-transition: height 0.8s, opacity 0.8s;
+	transition: height 0.8s, opacity 0.8s;
+}
+.show {
+
 }
 .message {
 
@@ -50,6 +64,10 @@ body {
 	height: 60px;
 	text-align: right;
 	padding: 15px;
+}
+#headerBarAvatar {
+	position: relative;
+	top: 10px;
 }
 
 .tableHead {
@@ -249,7 +267,7 @@ body {
 	display: none;
 }
 #uploadContainer{
-	max-height: 300px;
+	/*max-height: 300px;*/
 }
 #uploadContainer input[type="text"] {
 	position: absolute;
@@ -374,6 +392,10 @@ input[type="button"] {
 	max-width: 250px;
 }
 #stsLogo {
+	position: relative;
+	top: 5px;
+}
+#github {
 	position: relative;
 	top: 5px;
 }
