@@ -162,7 +162,7 @@ var Flick = function (id, user, callback) {
         get originalName() {return flick.originalName; },
         set originalName(value) { flick.originalName = value; change('originalName'); },
         //get thumbnailPath() {return (flick.thumbnailPath || flick.mediaPath + '\\thumb.jpg'); },
-        get thumbnailPath() { if (flick.mediaPath == undefined && flick.thumbnailPath == undefined) {return undefined;} else {return flick.mediaPath + '\\thumb.jpg'; } },
+        get thumbnailPath() { if (flick.mediaPath == undefined && flick.thumbnailPath == undefined) {return undefined;} else {return flick.mediaPath + '/thumb.jpg'; } },
         set thumbnailPath(value) { flick.thumbnailPath = value; change('thumbnailPath'); },
         get isEncoded() {return flick.isEncoded; },
         set isEncoded(value) { flick.isEncoded = value; change('isEncoded'); },

@@ -3,6 +3,7 @@ var router = express.Router();
 var fs = require('fs');
 var path = require('path');
 var multer = require('multer');
+var logger = require('../lib/logger');
 var Flick = require('../models/flick');
 /**
  * upload module.
@@ -55,11 +56,15 @@ router.put('/:filename',
                 path: file.path,
                 originalname: file.originalname
             };*/
-            console.log(req.body);
+            //console.log(req.body);
             //flick.setStatsD(req.statsD);
 
             flick.create(function (err) {
-                if (err) { console.log(err); err.code = err.code || 'F04001'; return (err); }
+                if (err) {
+                    err.code = err.code || 'F04001';
+                    logger.error(req,  'upload.put.flickCreate', err.code, err, 2);
+                    return (err);
+                }
             });
         }
     }),
