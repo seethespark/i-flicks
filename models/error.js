@@ -8,7 +8,11 @@ var statsD, error = {};
 error.setStatsD = function (statsd) {
     statsD = statsd;
 };
-
+/**
+ * Add an error to the local NEDB database
+ * @param {error} newError - the error object to add
+ * @param {Requester~requestCallback} callback - returns an error or undefined
+ */
 error.add = function (newError, callback) {
     var dbStartTime = new Date();
     db.insert(newError, function (err, newDoc) {
@@ -47,6 +51,12 @@ error.add = function (newError, callback) {
     });
 };
 
+/**
+ * Get recent errors
+ * @param {int} limit - how many rows to return
+ * @param {string} search - search for this string in errors.  If undefined then it's ignored
+ * @param {Requester~requestCallback} callback
+ */
 error.list = function (limit, search, callback) {
     var searchy, i, where = {};
     if (search) {
