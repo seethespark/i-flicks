@@ -373,8 +373,8 @@ router.put('/user', function (req, res, next) {
         }
         if (req.body.username.length === 0 ||
             req.body.password.length === 0 ||
-            req.body.firstName.length === 0 ||
-            req.body.lastName.length === 0 ||
+            req.body.givenName.length === 0 ||
+            req.body.familyName.length === 0 ||
             req.body.emailAddress.length === 0) {
             err = new Error('Required fields missing.');
             return next(err);
@@ -385,15 +385,15 @@ router.put('/user', function (req, res, next) {
         }
         user.username = req.body.username;
         user.password = req.body.password;
-        user.firstName = req.body.firstName;
-        user.lastName = req.body.lastName;
+        user.givenName = req.body.givenName;
+        user.familyName = req.body.familyName;
         user.emailAddress = req.body.emailAddress;
         user.isEnabled = true;
         user.isConfirmed = false;
         user.isSysAdmin = false;
         user.create(function (err, usr) {
             if (err) { return next(err); }
-            res.send({reply: 'Hello ' + user.firstName});
+            res.send({reply: 'Hello ' + user.givenName});
         });
     });
 });

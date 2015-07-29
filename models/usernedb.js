@@ -493,8 +493,8 @@ function userForBrowser() {
     userTmp = {
         id: user.id,
         username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        givenName: user.givenName,
+        familyName: user.familyName,
         isSysAdmin: user.isSysAdmin,
         options: user.options,
         isConfirmed: user.isConfirmed,
@@ -510,8 +510,8 @@ function userForBrowser() {
 function userFromSession(usr) {
     var user = this;
     user.id = usr.id;
-    user.firstName = usr.firstName;
-    user.lastName = usr.lastName;
+    user.givenName = usr.givenName;
+    user.familyName = usr.familyName;
     user.emailAddress = usr.emailAddress;
     user.isSysAdmin = usr.isSysAdmin;
     user.isEnabled = usr.isEnabled;
@@ -532,8 +532,8 @@ function userFromDatabase(user) {
     var usr = {};
     usr.id = user.id;
     usr.username = user.username;
-    usr.firstName = user.firstName;
-    usr.lastName = user.lastName;
+    usr.givenName = user.givenName;
+    usr.familyName = user.familyName;
     usr.emailAddress = user.emailAddress;
     usr.isSysAdmin = user.isSysAdmin;
     usr.isEnabled = user.isEnabled;
@@ -622,10 +622,10 @@ var User = function () {
         set loaded(value) { user.loaded = value; },
         get username() {return user.username; },
         set username(value) { user.username = value; },
-        get firstName() {return user.firstName; },
-        set firstName(value) { user.firstName = value; },
-        get lastName() {return user.lastName; },
-        set lastName(value) { user.lastName = value; },
+        get givenName() {return user.givenName; },
+        set givenName(value) { user.givenName = value; },
+        get familyName() {return user.familyName; },
+        set familyName(value) { user.familyName = value; },
         get emailAddress() {return user.emailAddress; },
         set emailAddress(value) { user.emailAddress = value; },
         get isSysAdmin() {return user.isSysAdmin; },

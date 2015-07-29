@@ -563,7 +563,7 @@ function checkConfirmationKey(key, callback) {
     }
 
     sql = 'SELECT TOP 1 * FROM UserConfirmation WHERE UserId = @id AND confirmationKey = @key';
-    request = new mssql.Request();
+    request = new mssql.Request(mssql.globalConnection);
     request.input('id', mssql.UniqueIdentifier, user.id);
     request.input('key', mssql.VarChar, key);
     request.query(sql, function (err, recordset) {
@@ -571,13 +571,13 @@ function checkConfirmationKey(key, callback) {
 
         if (recordset.length > 0) {
             sql = 'UPDATE Users SET isConfirmed = 1, dateUpdated = @now WHERE id = @id';
-            var request1 = new mssql.Request();
+            var request1 = new mssql.Request(mssql.globalConnection);
             request1.input('id', mssql.UniqueIdentifier, user.id);
             request1.input('now', mssql.DateTime2, new Date());
             request1.query(sql, function (err) {
                 if (err) { err.code = 'F06026'; callback(err, undefined); return; }
                 sql = 'DELETE FROM UserConfirmation WHERE UserId = @id';
-                var request2 = new mssql.Request();
+                var request2 = new mssql.Request(mssql.globalConnection);
                 request2.input('id', mssql.UniqueIdentifier, user.id);
                 request2.query(sql, function (err) {
                     if (err) { err.code = 'F06027'; callback(err, undefined); return; }
@@ -621,8 +621,8 @@ function userForBrowser() {
     userTmp = {
         id: user.id,
         username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        givenName: user.givenName,
+        familyName: user.familyName,
         isSysAdmin: user.isSysAdmin,
         options: user.options,
         isConfirmed: user.isConfirmed,
@@ -639,8 +639,8 @@ function userForBrowser() {
 function userFromSession(usr) {
     var user = this;
     user.id = usr.id;
-    user.firstName = usr.firstName;
-    user.lastName = usr.lastName;
+    user.givenName = usr.givenName;
+    user.familyName = usr.familyName;
     user.emailAddress = usr.emailAddress;
     user.isSysAdmin = usr.isSysAdmin;
     user.isEnabled = usr.isEnabled;
@@ -661,8 +661,8 @@ function userFromDatabase(user) {
     var usr = {};
     usr.id = user.id;
     usr.username = user.username;
-    usr.firstName = user.firstName;
-    usr.lastName = user.lastName;
+    usr.givenName = user.givenName;
+    usr.familyName = user.familyName;
     usr.emailAddress = user.emailAddress;
     usr.isSysAdmin = user.isSysAdmin;
     usr.isEnabled = user.isEnabled;
@@ -746,10 +746,10 @@ var User = function () {
         set loaded(value) { user.loaded = value; },
         get username() {return user.username; },
         set username(value) { user.username = value; },
-        get firstName() {return user.firstName; },
-        set firstName(value) { user.firstName = value; },
-        get lastName() {return user.lastName; },
-        set lastName(value) { user.lastName = value; },
+        get givenName() {return user.givenName; },
+        set givenName(value) { user.givenName = value; },
+        get familyName() {return user.familyName; },
+        set familyName(value) { user.familyName = value; },
         get emailAddress() {return user.emailAddress; },
         set emailAddress(value) { user.emailAddress = value; },
         get isSysAdmin() {return user.isSysAdmin; },
