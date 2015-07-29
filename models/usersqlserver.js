@@ -1,5 +1,9 @@
 // Error code F06
-
+/** 
+ * User subclass.  Use this for all interactions with user when using MS SQL Server.
+ * 
+ * @module usersqlserver
+ */
 var crypto = require('crypto');
 var bcrypt = require('bcrypt');
 var mssql = require('mssql');

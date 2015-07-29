@@ -1,5 +1,9 @@
 // Error code F07
-
+/** 
+ * Users subclass.  Use this for all interactions with users when using MS SQL Server.
+ * 
+ * @module userssqlserver
+ */
 var mssql = require('mssql');
 //var connection = mssql.globalConnection;
 var users = {};

@@ -1,5 +1,9 @@
 // Error code F06
-
+/** 
+ * User subclass.  Use this for all interactions with user when using NEDB.
+ * 
+ * @module usernedb
+ */
 var crypto = require('crypto');
 var bcrypt = require('bcrypt');
 var nedb = require('nedb');

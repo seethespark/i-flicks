@@ -1,4 +1,9 @@
 // Error code F06
+/** 
+ * User class.  Use this for all interactions with user
+ * 
+ * @module User
+ */
 
 var User;
 if (global.iflicks_settings.databaseType === 'nedb') {

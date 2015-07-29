@@ -1,4 +1,9 @@
 // Error code F08
+/** 
+ * Flicka subclass.  Use this for all interactions with flicks when using MS SQL Server.
+ * 
+ * @module flickssqlserver
+ */
 var mssql = require('mssql');
 var search = require('../lib/search');
 

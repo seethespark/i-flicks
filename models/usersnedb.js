@@ -1,4 +1,9 @@
 // Error code F07
+/** 
+ * Users subclass.  Use this for all interactions with users when using NEDB.
+ * 
+ * @module usersnedb
+ */
 
 var Nedb = require('nedb');
 

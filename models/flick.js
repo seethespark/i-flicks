@@ -1,4 +1,10 @@
 // Error code F04
+/** 
+ * Flick class.  Use this for all interactions with flicks.
+ * 
+ * @module flick
+ */
+
 var flickDb, FlickDb;
 if (global.iflicks_settings.databaseType === 'nedb') {
     FlickDb = require('./flicknedb');

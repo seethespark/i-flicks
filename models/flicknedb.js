@@ -1,13 +1,13 @@
 // Error code F04
+/** 
+ * Flick subclass.  Use this for all interactions with flicks when using NEDB.
+ * 
+ * @module flicknedb
+ */
 var nedb = require('nedb');
 var path = require('path');
 var fs = require('fs');
 
-/** 
- * Programmatic representation of a flick, or video.
- * 
- * @module flick
- */
 
 var db = nedb.globalDb.flick, dbView = nedb.globalDb.flickView;
 //var db = new Nedb({ filename: global.iflicks_settings.nedbPath + 'iflicksdb', autoload: true });

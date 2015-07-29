@@ -1,4 +1,9 @@
 // Error code F04
+/** 
+ * Flick subclass.  Use this for all interactions with flicks when using MS SQL Server.
+ * 
+ * @module flicksqlserver
+ */
 var mssql = require('mssql');
 var crypto = require('crypto');
 var logger = require('../lib/logger');

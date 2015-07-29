@@ -1,6 +1,10 @@
 // Error code F08
+/** 
+ * Flicks subclass.  Use this for all interactions with flicks when using NEDB.
+ * 
+ * @module flicksnedb
+ */
 var nedb = require('nedb');
-//var flick = require('./flick');
 var search = require('../lib/search');
 
 var db = nedb.globalDb.flick, dbView = nedb.globalDb.flickView, flicks = {}, statsD;
