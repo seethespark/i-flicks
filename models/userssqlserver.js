@@ -16,7 +16,7 @@ function listAll(callback) {
     var sql, request, i, dbStartTime = new Date();
     sql = 'SELECT * FROM Users WHERE isDeleted = 0 ORDER BY dateEntered DESC';
 
-    request = new mssql.Request(add);
+    request = new mssql.Request(mssql.globalConnection);
     request.query(sql, function (err, recordset) {
         if (statsD) {
             statsD.timing('users.listAll', dbStartTime);

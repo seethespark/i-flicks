@@ -78,6 +78,9 @@ window.iflicks = (function iflicks(settings) {
         if (message !== undefined && window.console !== undefined) {
             window.console.log((new Date()).toUTCString() + ' :: ' + location + ' :: ' + message);
         }
+        if (message.indexOf('<') === 0 && message.length > 90) {
+            message = 'Unexpected error.';
+        }
         if (message) {
             timeout = Date.now() + (timeout * 1000);
             err.message = message;
