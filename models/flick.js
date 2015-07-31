@@ -123,6 +123,56 @@ function suggestRating(rating, userId, ipAddress, callback) {
     });
 }
 
+/**
+ * Grant access
+ * @param {uuid} currentUserId - user's unique id. 
+ * @param {boolean} isSysAdmin - well, are they?
+ * @param {uuid} newUserId - user to add to this flick
+ * @param {Requester~requestCallback} callback
+ */
+function addUser(currentUserId, isSysAdmin, newUserId, callback) {
+
+    var err, flick = this;
+    if (!isSysAdmin && currentUserId !== flick.userId) {
+        err = new Error('Only the owner or sys admins can change permissions');
+        err.code = 'F04023';
+        callback(err, undefined);
+        return;
+    }
+    if (flick.id === undefined || flick.id === null) {
+        err = new Error('Flick ID is not defined');
+        err.code = 'F04024';
+        callback(err, undefined);
+        return;
+    }
+
+    flickDb.addUser(flick.id, newUserId, callback);
+}
+/**
+ * Revoke access
+ * @param {uuid} currentUserId - user's unique id. 
+ * @param {boolean} isSysAdmin - well, are they?
+ * @param {uuid} newUserId - user to add to this flick
+ * @param {Requester~requestCallback} callback
+ */
+function removeUser(currentUserId, isSysAdmin, newUserId, callback) {
+    var err, flick = this;
+    if (!isSysAdmin && currentUserId !== flick.userId) {
+        err = new Error('Only the owner or sys admins can change permissions');
+        err.code = 'F04025';
+        callback(err, undefined);
+        return;
+    }
+    if (flick.id === undefined || flick.id === null) {
+        err = new Error('Flick ID is not defined');
+        err.code = 'F04026';
+        callback(err, undefined);
+        return;
+    }
+
+    flickDb.removeUser(flick.id, newUserId, callback);
+}
+
 
 
 /**
@@ -202,6 +252,8 @@ var Flick = function (id, user, callback) {
             playCount: flick.playCount
         }; },
 
+        addUser: addUser,
+        removeUser: removeUser,
         suggestRating: suggestRating,
         load: load,
         create: create,

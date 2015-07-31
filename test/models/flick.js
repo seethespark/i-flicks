@@ -111,6 +111,32 @@ describe('flick object', function () {
                 });
             });
         });
+        describe('flick add user', function () {
+            it('should return nothing', function (done) {
+                var flick = new Flick();
+                flick.load(id, 'userId', true, function (err) {
+                    flick.addUser('00000000-0000-0000-0000-000000000000', true,'00000000-0000-0000-0000-000000000000', function (err) {
+                        assert.ifError(err);
+                        done();
+
+                    });
+                });
+            });
+        });
+        describe('flick remove user', function () {
+            it('should return nothing', function (done) {
+                var flick = new Flick();
+                flick.load(id, 'userId', true, function (err) {
+                    flick.addUser('00000000-0000-0000-0000-000000000000', true,'00000000-0000-0000-0000-000000000000', function (err) {
+                        assert.ifError(err);
+                        flick.removeUser('00000000-0000-0000-0000-000000000000', true, '00000000-0000-0000-0000-000000000000', function (err) {
+                            assert.ifError(err);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
         describe('delete', function () {
             it('should return true', function (done) {
                 var flick = new Flick();
@@ -128,7 +154,7 @@ describe('flick object', function () {
     describe('create', function () {
         it('should return the new ID', function (done) {
             var flick = new Flick();
-            flick.userId = '6145017E-A403-40C2-BAFA-948EE422F674';
+            flick.userId = '00000000-0000-0000-0000-000000000000';
             flick.name = 'Test';
             flick.description = 'Test flick description';
             flick.isEncoded = true;

@@ -19,7 +19,7 @@ function runTest(dbType, User) {
                     user.load(id, function (err, usr) {
                         assert.ifError(err);
                         assert.equal('object', typeof usr);
-                        assert.equal('Test', usr.firstName);
+                        assert.equal('Test', usr.givenName);
                         assert.equal(user, usr);
                         done();
                     });
@@ -31,7 +31,7 @@ function runTest(dbType, User) {
                     user.authenticate(username, 'password', function (err, usr) {
                         assert.ifError(err);
                         assert.equal('object', typeof usr);
-                        assert.equal('Test', user.firstName);
+                        assert.equal('Test', user.givenName);
                         assert.equal(user, usr);
                         done();
                     });
@@ -53,8 +53,8 @@ function runTest(dbType, User) {
                 it('should return an error', function (done) {
                     var user = new User();
                     user.username = username;
-                    user.firstName = 'Test';
-                    user.lastName = 'Test';
+                    user.givenName = 'Test';
+                    user.familyName = 'Test';
                     user.emailAddress = '';
                     user.isSysAdmin = false;
                     user.isConfirmed = true;
@@ -71,14 +71,14 @@ function runTest(dbType, User) {
                     var user = new User();
                     user.load(id, function (err, usr) {
                         assert.ifError(err);
-                        user.firstName = 'tseT';
+                        user.givenName = 'tseT';
                         user.save(function (err, result) {
                             assert.ifError(err);
                             assert.equal(true, result);
                             var user2 = new User();
                             user2.load(id, function (err, usr2) {
                                 assert.ifError(err);
-                                assert.equal(user2.firstName, 'tseT');
+                                assert.equal(user2.givenName, 'tseT');
                                 done();
                                 
                             });
@@ -159,8 +159,8 @@ function runTest(dbType, User) {
             it('should return the new ID', function (done) {
                 var user = new User();
                 user.username = username;
-                user.firstName = 'Test';
-                user.lastName = 'Test';
+                user.givenName = 'Test';
+                user.familyName = 'Test';
                 user.emailAddress = '';
                 user.isSysAdmin = false;
                 user.isConfirmed = true;

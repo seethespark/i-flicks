@@ -1093,12 +1093,12 @@ window.iflicks = (function iflicks(settings) {
     }
     function cookieAccept() {
         document.getElementById('cookieBanner').className = 'hide';
-        setCookie('cookieConsent', 'true', 1);
+        setCookie('cookieConsent', 'true', 365);
     }
 
     function closeInfoPanel() {
         document.getElementById('infoContainer').className = 'hide';
-        setCookie('closeInfoPanel', 'true', 1);
+        setCookie('closeInfoPanel', 'true', 365);
     }
     /// Login
     function postLogin() {

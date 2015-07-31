@@ -7,6 +7,7 @@
 var mssql = require('mssql');
 var crypto = require('crypto');
 var logger = require('../lib/logger');
+var flickUser = require('./flickUser');
 var StatsD = require('statsd-client');
 
 var statsD = StatsD.globalStatsD;
@@ -69,7 +70,7 @@ function flickSqlServer() {
 
         request = new mssql.Request(mssql.globalConnection);
         sql = 'SELECT * FROM flick f ' +
-         ' LEFT JOIN flickUser fu ON fu.flickId = f.id ' +
+         ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1' +
             ' WHERE  f.id = @id AND f.isDeleted = 0 ';
             if (isSysAdmin !== true) {
               sql += ' AND (f.isPublic = 1 ' +
@@ -287,6 +288,15 @@ function flickSqlServer() {
         });
     }
 
+    function doAddUser(flickId, userId, callback) {
+        var colValues = {isGrantedAccess: true};
+        flickUser.update(flickId, userId, colValues, callback);
+    }
+    function doRemoveUser(flickId, userId, callback) {
+        var colValues = {isGrantedAccess: false};
+        flickUser.update(flickId, userId, colValues, callback);
+    }
+
     this.flickFromDatabase = function (flick) {
         return doFlickFromDatabase(flick);
     };
@@ -298,6 +308,12 @@ function flickSqlServer() {
     };
     this.updateFlick = function (flick, callback) {
         return doUpdateFlick(flick, callback);
+    };
+    this.addUser = function (flickId, userId, callback) {
+        return doAddUser(flickId, userId, callback);
+    };
+    this.removeUser = function (flickId, userId, callback) {
+        return doRemoveUser(flickId, userId, callback);
     };
 }
 
