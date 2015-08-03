@@ -114,7 +114,14 @@ function list(page, limit, userId, isSysAdmin, callback) {
     rowLower = page * limit;
     rowUpper = (page + 1) * limit;
 
-    sql = 'SELECT COUNT(*) as count FROM flick WHERE userId = @userId AND isEncoded = 0 AND isDeleted = 0';
+    sql = 'SELECT COUNT(*) as count FROM flick f' +
+        ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 ' +
+        ' WHERE f.isDeleted = 0 AND f.isEncoded = 1 ';
+        if (isSysAdmin !== true) {
+          sql += ' AND (f.isPublic = 1 ' +
+            ' OR fu.flickId IS NOT NULL ' +
+            ' OR f.userId = @userId ) ';
+        }
     request = new mssql.Request(mssql.globalConnection);
     request.input('userId', mssql.UniqueIdentifier, userId);
     request.query(sql, function (err, recordset) {
@@ -123,7 +130,7 @@ function list(page, limit, userId, isSysAdmin, callback) {
       sql = 'SELECT * ' +
         'FROM ( SELECT ROW_NUMBER() OVER ( ORDER BY f.dateEntered ) AS RowNum, f.* ' +
         'FROM flick f ' +
-        ' LEFT JOIN flickUser fu ON fu.flickId = f.id ' +
+        ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 ' +
         ' WHERE f.isDeleted = 0 AND f.isEncoded = 1 ';
         if (isSysAdmin !== true) {
           sql += ' AND (f.isPublic = 1 ' +
@@ -209,7 +216,7 @@ function searchy(page, limit, searchTerm, userId, isSysAdmin, callback) {
 
     sql = 'SELECT f.* ' +
       'FROM flick f ' +
-      ' LEFT JOIN flickUser fu ON fu.flickId = f.id ' +
+      ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 ' +
       ' WHERE f.isDeleted = 0 AND f.isEncoded = 1 AND ( ' +
         'name like \'%\' + @searchTerm + \'%\''+
         'OR description like \'%\' + @searchTerm + \'%\''+

@@ -3,7 +3,7 @@
   "homepage": "https://github.com/seethespark/i-flicks",
   "author": "Nick Whiteley",
   "description": "Video sharing website and application",
-  "version": "0.1.50",
+  "version": "0.1.52",
   "private": false,
   "scripts": {
     "start": "nodemon ./bin/www"
