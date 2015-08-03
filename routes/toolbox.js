@@ -122,8 +122,8 @@ router.get('/flickviewsviewer/:limit/:search', function (req, res, next) {
 router.get('/userviewercol', function (req, res, next) {
     var cols = [
         {name: 'username', value: 'Username', type: 'inputText'},
-        {name: 'firstName', value: 'First name', type: 'inputText'},
-        {name: 'lastName', value: 'Last name', type: 'inputText'},
+        {name: 'givenName', value: 'Given name', type: 'inputText'},
+        {name: 'familyName', value: 'Family name', type: 'inputText'},
         {name: 'emailAddress', value: 'Email', type: 'inputText'},
         {name: 'password', value: 'Password', type: 'inputText'},
         {name: 'isConfirmed', value: 'Email confirmed', type: 'inputCheckbox'},
@@ -151,9 +151,10 @@ router.get('/userviewer/:limit/:search', function (req, res, next) {
 });
 
 
-/** GET FFmpegAvailableFormats column array
-* 
-*/
+/** 
+ * GET FFmpegAvailableFormats column array
+ * 
+ */
 router.get('/ffmpegAvailableFormatscol', function (req, res, next) {
     var cols = [
         {name: 'name', value: 'Name', type: 'text'},

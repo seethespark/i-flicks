@@ -421,7 +421,7 @@ function deleteUser(callback) {
 
 /**
  * stamp each time a user connects
- * @param {string} userId
+ * @param {uuid} userId
  */
 function setDateLastActive(userId) {
     var sql, request, dbStartTime = new Date();
@@ -429,20 +429,23 @@ function setDateLastActive(userId) {
     sql = 'UPDATE Users SET dateLastActive = @now WHERE id = @id;';
     request.input('id', mssql.UniqueIdentifier, userId);
     request.input('now', mssql.DateTime2, new Date());
-    request.query(sql, function () {
+    request.query(sql, function (err) {
         if (statsD) {
             statsD.timing('user.setDateLastActive', dbStartTime);
+        }
+        if (err) {
+            logger.errorNoReq('usersqlserver.setDateLastActive', 'F06018', err, 2);
         }
     });
 }
 
 
-function userChanged(user) {
+/*function userChanged(user) {
     if (user.loaded) {
         user.changed = true;
         user.changeCount++;
     }
-}
+}*/
 
 /**
  * Get a user's options object
@@ -523,7 +526,7 @@ function authenticate(username, password, callback) {
             if (err) { err.code = err.code || 'F06038'; callback(err, undefined); return; }
             user.options = options;
             callback(err, user);
-            setDateLastActive(user);
+            setDateLastActive(user.id);
         });
     });
 }
@@ -546,7 +549,7 @@ function load(userId, callback) {
             if (err) { err.code = err.code || 'F06037'; callback(err, undefined); return; }
             user.options = options;
             callback(err, user);
-            setDateLastActive(user);
+            setDateLastActive(user.id);
         });
     });
 }
@@ -648,7 +651,7 @@ function userFromSession(usr) {
     user.changeCount = usr.changeCount;
     user.customerId = usr.customerId;
     user.emailConfirmed = usr.emailConfirmed;
-    setDateLastActive(user);
+    setDateLastActive(user.id);
 
     return user;
 }

@@ -54,6 +54,7 @@ router.get('/', function (req, res, next) {
         showInfo = true;
         info = '<p>i-flkicks is a video sharing website where access is controlled by the uploader of the videos.  ' +
             'The software is available for anyone who wants to download it, use it or modify it; yes it\'s free.</p>' +
+            '<p>If you see nothing below then that\'s probably because you aren\'t logged in and there are no public flicks.</p>' +
             '<p>Once you have an account you will be able to upload videos and share them with friends, family ' +
             'and the world.</p><p>There are other video content websites but most are geared towards free access for '+
             'everyone.  Here we value discresion and privacy.</p><p>Please do not upload indecent videos or ' +

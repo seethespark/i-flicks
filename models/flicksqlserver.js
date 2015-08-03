@@ -90,7 +90,7 @@ function flickSqlServer() {
                     if (key === 'userId' && Array.isArray(record[key])) {
                         record.userId = record.userId[0];
                     }
-                    if (key === 'fileDetail' && record[key] !== null) {
+                    if (key === 'fileDetail' && record[key] !== null && record[key] !== undefined && record[key] !== '') {
                         record.fileDetail = JSON.parse(record.fileDetail);
                     }
                 }

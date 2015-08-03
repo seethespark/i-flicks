@@ -1110,7 +1110,7 @@ window.iflicks = (function iflicks(settings) {
 
             document.getElementById('loggedinContainer').style.display = 'inline-block';
             document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('headerBarUserName').textContent  = 'Hello ' + user.firstName;
+            document.getElementById('headerBarUserName').textContent  = 'Hello ' + user.givenName;
             if (user.gravatarUrl) {
                 document.getElementById('headerBarAvatar').src  = user.gravatarUrl;
             }
