@@ -122,6 +122,8 @@ function flickNedb() {
         });
     }                   
 
+    function doAddRating(flickId, rating, userId, ipAddress, callback) {callback();}
+    
     this.flickFromDatabase = function (flick) {
         return doFlickFromDatabase(flick);
     };
@@ -133,6 +135,9 @@ function flickNedb() {
     };
     this.updateFlick = function (flick, callback) {
         return doUpdateFlick(flick, callback);
+    };
+    this.addRating = function (flickId, rating, userId, ipAddress, callback) {
+        return doAddRating(flickId, rating, userId, ipAddress, callback);
     };
 }
 

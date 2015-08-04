@@ -88,7 +88,7 @@ module.exports = function ret(sett) {
     var api = require('./routes/api');
     var security = require('./lib/security');
 
-    global.newVideoNotificationRecipients = [];
+    global.newFlickNotificationRecipients = [];
 
     app.enable('strict routing');//???
 
@@ -96,7 +96,7 @@ module.exports = function ret(sett) {
     ///// NOTE::: Enocde currently unreliable when called this way.
     utils.cleanMedia();
     utils.encode();
-    utils.pingNewVideo();
+    utils.pingNewFlick();
 
     // view engine setup
     app.set('views', path.join(__dirname, 'views'));

@@ -244,15 +244,15 @@ router.put('/user', function (req, res, next) {
         console.log(req.body);
         if (req.body.username.length === 0 || 
             req.body.password.length === 0 ||
-            req.body.firstName.length === 0 ||
-            req.body.lastName.length === 0 ||
+            req.body.givenName.length === 0 ||
+            req.body.familyName.length === 0 ||
             req.body.emailAddress.length === 0) {
             return next(new Error('Some fields are missing'));
         }
         user.username = req.body.username;
         user.password = req.body.password;
-        user.firstName = req.body.firstName;
-        user.lastName = req.body.lastName;
+        user.givenName = req.body.givenName;
+        user.familyName = req.body.familyName;
         user.emailAddress = req.body.emailAddress;
         user.isSysAdmin = req.body.isSysAdmin || false;
         user.isConfirmed = req.body.isConfirmed || false;
@@ -267,8 +267,8 @@ router.post('/user', function (req, res, next) {
     var user = new User(req);
     user.load(req.body.userId, function (err, usr) {
         if (err) { return next(err); }
-        user.firstName = req.body.firstName || user.firstName;
-        user.lastName = req.body.lastName || user.lastName;
+        user.givenName = req.body.givenName || user.givenName;
+        user.familyName = req.body.familyName || user.familyName;
         user.emailAddress = req.body.emailAddress || user.emailAddress;
         user.isSysAdmin = req.body.isSysAdmin || false;
         user.isDisabled = req.body.isDisabled || false;

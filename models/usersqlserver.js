@@ -129,8 +129,7 @@ function getUserById(userId, includeDisabled, callback) {
 /**
  * Get a user based on the passed in username and password
  * @param {string} username
- * @param {string} password
- * @param {bool} includeDisabled
+ * @param {string} password - if undefined then just based on username
  * @param {Requester~requestCallback} callback
  */
 function getUserByUsername(username, password, callback) {
@@ -158,6 +157,12 @@ function getUserByUsername(username, password, callback) {
             err = new Error('Account temporarily locked.  Try later.');
             err.code = 'F06028';
             callback(err, undefined);
+            return;
+        }
+        /// if just the username passed in that use that.
+        if (password === undefined) {
+            delete recordset[0].password;
+            callback(undefined, recordset[0]);
             return;
         }
         bcrypt.compare(password, recordset[0].password, function (err, res) {
@@ -189,6 +194,34 @@ function getUserByUsername(username, password, callback) {
                 callback(undefined, recordset[0]);
             }
         });
+    });
+}
+/**
+ * Get a user based on the passed in email address or username
+ * @param {string} searchTerm
+ * @param {Requester~requestCallback} callback
+ */
+function getUserByUsernameOrEmailAddress(searchTerm, callback) {
+    var sql, request, dbStartTime = new Date();
+    sql = 'SELECT * FROM Users WHERE (username = @searchTerm OR emailAddress = @searchTerm) AND isDeleted = 0';
+
+    request = new mssql.Request(mssql.globalConnection);
+    request.input('searchTerm', mssql.VarChar, searchTerm);
+    request.query(sql, function (err, recordset) {
+        if (statsD) {
+            statsD.timing('user.getUserByUsernameOrEmailAddress.db', dbStartTime);
+            dbStartTime = new Date();
+        }
+        if (err) { mssql.errorHandler(err); err.code = 'F06040'; callback(err, undefined); return; }
+        if (recordset.length === 0) {
+            err = new Error('User not found');
+            err.code = 'F06041';
+            callback(err, undefined);
+            return;
+        }
+
+        delete recordset[0].password;
+        callback(undefined, recordset[0]);
     });
 }
 
@@ -511,7 +544,13 @@ function setOption(option, value, callback) {
  * @param {Requester~requestCallback} callback
  */
 function authenticate(username, password, callback) {
-    var user = this, key, dbStartTime = new Date();
+    var user = this, key, dbStartTime = new Date(), err;
+    if (password === undefined || password === null) {
+        err = new Error('Password is required');
+        err.code = 'F06024';
+        callback(err);
+        return;
+    }
     getUserByUsername(username, password, function (err, result) {
         if (err) { err.code = err.code || 'F06016'; callback(err, undefined); return; }
         for (key in result) {
@@ -538,20 +577,37 @@ function authenticate(username, password, callback) {
  */
 function load(userId, callback) {
     var user = this, key;
-    getUserById(userId, user.includeDisabled, function (err, result) {
-        if (err) { err.code = err.code || 'F06017'; callback(err, undefined); return; }
-        for (key in result) {
-            if (result.hasOwnProperty(key)) {
-                user[key] = result[key];
+    if (RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i).test(userId)) {
+        getUserById(userId, user.includeDisabled, function (err, result) {
+            if (err) { err.code = err.code || 'F06017'; callback(err, undefined); return; }
+            for (key in result) {
+                if (result.hasOwnProperty(key)) {
+                    user[key] = result[key];
+                }
             }
-        }
-        user.getOptions(function (err, options) {
-            if (err) { err.code = err.code || 'F06037'; callback(err, undefined); return; }
-            user.options = options;
-            callback(err, user);
-            setDateLastActive(user.id);
+            user.getOptions(function (err, options) {
+                if (err) { err.code = err.code || 'F06037'; callback(err, undefined); return; }
+                user.options = options;
+                callback(err, user);
+                setDateLastActive(user.id);
+            });
         });
-    });
+    } else { /// Use the alternative natural keys
+        getUserByUsernameOrEmailAddress(userId, function (err, result) {
+            if (err) { err.code = err.code || 'F06042'; callback(err, undefined); return; }
+            for (key in result) {
+                if (result.hasOwnProperty(key)) {
+                    user[key] = result[key];
+                }
+            }
+            callback(err, user);
+            /*user.getOptions(function (err, options) {
+                if (err) { err.code = err.code || 'F06043'; callback(err, undefined); return; }
+                user.options = options;
+                setDateLastActive(user.id);
+            });*/
+        });
+    }
 }
 
 /**

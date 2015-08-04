@@ -88,8 +88,8 @@ router.put('/copy',
 
                     flick.create(function (err, id) {
                         if (err) { logger.error(req, 'api.copy.post.addFlick', 'F06002', err, 2); }
-                        global.newVideoNotificationRecipients.forEach(function (res) {
-                            res.write('event: newVideo\ndata: "reload"\nretry: 10000\n\n');
+                        global.newFlickNotificationRecipients.forEach(function (res) {
+                            res.write('event: newFlick\ndata: "reload"\nretry: 10000\n\n');
                             res.flush();
                         });
                     });

@@ -8,13 +8,13 @@
 		</a>
 		<span id="message" class="message"></span>
 		<span id="headerBarUserName"></span>
-		<img id="headerBarAvatar"></img>
+		<img id="headerBarAvatar" />
 		<input type="text" id="search" name="search" placeholder="Search...">
 		<input type="button" id="submitSearch" value="Search" class="button">
 		<span id="loggedinContainer">
 			<input type="button" id="submitLogout" value="Logout" class="button">
 			<input type="button" id="showUploadContainer" value="Upload" class="button">
-			<input type="button" id="showUnencodedVideoList" value="Unencoded" class="button">
+			<input type="button" id="showUnencodedFlickList" value="Unencoded" class="button">
 		</span>
 		<span id="loginContainer">
 			<span id="loginTextInputs">
@@ -26,7 +26,7 @@
 			<input type="button" id="showCreateAccount" value="Create account" class="button">
 			{{/if}}
 		</span>
-		<input type="button" id="showVideoList" value="List videos." class="button">
+		<input type="button" id="showFlickList" value="List flicks." class="button">
 	</div>
 	{{#if showInfo}}
 	<div id="infoContainer">
@@ -43,18 +43,18 @@
 			<br>
 			<label for="emailWhenEncoded">Email when complete:</label><input type="checkbox" id="emailWhenEncoded" name="emailWhenEncoded" class="uploadContainer">
 			<br>
-			<!--<label for="videoFile">File to upload
+			<!--<label for="flickFile">File to upload
 				<div id="uploadContainerFile">Select file
-				   <input type="file" name="video"  id="videoFile" />
+				   <input type="file" name="flick"  id="flickFile" />
 				</div>
 			</label>
 			-->
-			<label for="videoFile">File to upload</label><input type="file" name="video" id="videoFile" class="uploadContainer button"> 
+			<label for="flickFile">File to upload</label><input type="file" name="flick" id="flickFile" class="uploadContainer button"> 
 			<!--<canvas id="thumbVidCanvas" width="70" height="40"  class="uploadContainer"></canvas>
 			<video id="thumbVid" src="/" class="hide" width="70" height="40" controls>
 			</video>-->
 			<br>
-			<input type="button" id="submitUploadNewVideo" value="Send" class="button">
+			<input type="button" id="submitUploadNewFlick" value="Send" class="button">
 			<progress id="uploadProgress" class="hide" value="0" max="1"></progress>
 			<span id="messageUploadVid" class="message"></span>
 		</form>
@@ -78,9 +78,9 @@
 		</form>
 	</div>
 	{{/if}}
-	<div id="videoList"></div>
-	<div id="videoListUnencoded"></div>
-	<div id="videoContainer"></div>
+	<div id="flickList"></div>
+	<div id="flickListUnencoded"></div>
+	<div id="flickContainer"></div>
     <script>
     var vid = '{{vid}}';
     </script>
@@ -110,7 +110,7 @@
           videojs.options.flash.swf = '/script/video-js.swf';
           if (vid !== '') {
             //document.addEventListener('DOMContentLoaded', function() {
-              iflicks.showVideoOnLoad(vid);
+              iflicks.showFlickOnLoad(vid);
             //});
           }
         }

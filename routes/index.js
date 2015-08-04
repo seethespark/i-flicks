@@ -60,7 +60,7 @@ router.get('/', function (req, res, next) {
             'everyone.  Here we value discresion and privacy.</p><p>Please do not upload indecent videos or ' +
             'material for which you don\'t have permission.  If you do it will be removed.</p>';
     }
-    settings = JSON.stringify({ videoListPageLength: 10 });
+    settings = JSON.stringify({ flickListPageLength: 10 });
     setHeaders(res);
     res.render('index', { 
         title: 'i-Flicks',
@@ -81,7 +81,7 @@ router.get('/', function (req, res, next) {
  * @param {string} search - Search term, does a limple pattern match.  Use "-" if you want everything.  This prevents the URL from dropping the trailing slash.
  * @method
  */
-router.get('/videolist/:page/:limit/:search', function (req, res, next) {
+router.get('/flicklist/:page/:limit/:search', function (req, res, next) {
     var userId, isSysAdmin;
     if (req.user) {
         userId = req.user.id;
@@ -106,7 +106,7 @@ router.get('/videolist/:page/:limit/:search', function (req, res, next) {
 * @param {string} id - The _id of the video
 * 
 */
-router.get('/videodetail/:id', function (req, res, next) {
+router.get('/flickdetail/:id', function (req, res, next) {
     var userId, flick, isSysAdmin, retVal;
     if (req.user && req.user.id) {
         userId = req.user.id;
@@ -153,7 +153,7 @@ router.get('/thumb/:id/:fileName', function (req, res, next) {
 * @param {string} id - The _id of the video
 * @param {string} filename - The variant of the file being requested (small.mp4, bit.webm etc.)
 */
-router.get('/video/:id/:fileName', function (req, res, next) {
+router.get('/flick/:id/:fileName', function (req, res, next) {
     var userId, isSysAdmin, flick;
     if (req.user) {
         userId = req.user.id;
@@ -165,7 +165,7 @@ router.get('/video/:id/:fileName', function (req, res, next) {
         var file = path.join(flick.mediaPath + '/' + req.params.fileName);
         vidStreamer.settings({
             "rootFolder": flick.mediaPath,
-            "rootPath": 'video/' + flick.id
+            "rootPath": 'flick/' + flick.id
         });
         vidStreamer(req, res);
     });
@@ -190,7 +190,7 @@ router.post('/error', function (req, res, next) {
 * @param {string} id - The _id of the video
 * 
 */
-router.post('/playVideo/:id', function (req, res, next) {
+router.post('/playFlick/:id', function (req, res, next) {
     var userId, isSysAdmin, flick;
     if (req.user) {
         userId = req.user.id;
@@ -248,7 +248,7 @@ router.post('/timeupdate/:id/:time', function (req, res, next) {
 * @param {string} id - The _id of the video
 * 
 */
-router.delete('/video/:id', function (req, res, next) {
+router.delete('/flick/:id', function (req, res, next) {
     if (!req.user) { var err = new Error('Delete access denied'); err.status = 401; return next(err); }
     var flick = new Flick();
     flick.load(req.params.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
@@ -291,7 +291,7 @@ router.post('/undelete/:id', function (req, res, next) {
 * @param {number} limit - The number of records to return.
 * 
 */
-router.get('/videolistunencoded/:page/:limit', function (req, res, next) {
+router.get('/flicklistunencoded/:page/:limit', function (req, res, next) {
     if (!req.user) { var err = new Error('This page is restricted to logged in people'); err.status = 401; return next(err); }
     //userId = req.user.id;
     flicks.listUnencoded(req.params.page, req.params.limit, req.user.id, function (err, flicks) {
@@ -304,15 +304,15 @@ router.get('/videolistunencoded/:page/:limit', function (req, res, next) {
 /** GET new videos event emmitter.  This sends a message when any new videos are added
 * 
 */
-router.get('/newvideo', function (req, res) {
+router.get('/newflick', function (req, res) {
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive'
     });
-    global.newVideoNotificationRecipients.push(res);
+    global.newFlickNotificationRecipients.push(res);
     req.once('close', function () {
-        global.newVideoNotificationRecipients.pop(res);
+        global.newFlickNotificationRecipients.pop(res);
     });
 });
 
@@ -320,7 +320,7 @@ router.get('/newvideo', function (req, res) {
 * @param {Object} body - {id, name, description, public, directLink}
 * 
 */
-router.post('/editVideo', function (req, res, next) {
+router.post('/editFlick', function (req, res, next) {
     if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
     var flick = new Flick();
     flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
@@ -472,14 +472,59 @@ router.post('/copy', function (req, res, next) {
         });
 });
 
+/** PUT grant a specified username or email address access
+* 
+*/
+router.put('/flickuser', function (req, res, next) {
+    if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
+    var flick = new Flick(), user = new User();
+    user.load(req.body.searchTerm, function (err) {
+        if (err) { err.code = err.code || 'F03026'; return next(err); }
+        flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+            if (err) { err.code = err.code || 'F03022'; return next(err); }
+            if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
+                flickUser.add(flick.id, user.id, function (err) {
+                    if (err) { err.code = err.code || 'F03023'; return next(err); }
+                    res.send({All: 'OK'});
+                });
+            } else {
+                err = new Error('Edit access denied'); err.status = 401; return next(err);
+            }
+        });
+
+    });
+});
+
+/** DELETE revoke a specified username or email address access rights
+* 
+*/
+router.delete('/flickuser', function (req, res, next) {
+    if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
+    var flick = new Flick(), user = new User();
+    user.load(req.body.searchTerm, function (err) {
+        if (err) { err.code = err.code || 'F03027'; return next(err); }
+        flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+            if (err) { err.code = err.code || 'F03024'; return next(err); }
+            if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
+                flickUser.remove(flick.id, user.id, function (err) {
+                    if (err) { err.code = err.code || 'F03025'; return next(err); }
+                    res.send({All: 'OK'});
+                });
+            } else {
+                err = new Error('Edit access denied'); err.status = 401; return next(err);
+            }
+        });
+    });
+});
+
 
 /** GET user validation
 * @todo remove this
 * 
 */
-router.get('/userconfirm/:id/:key', function (req, res, next) {
+router.get('/userconfirm/:userId/:key', function (req, res, next) {
     var user = new User();
-    user.load(req.params.id, function (err, usr) {
+    user.load(req.params.userId, function (err, usr) {
         if (err) { err.code = err.code || 'F03020'; return next(err); }
         user.checkConfirmationKey(req.params.key, function (err, isConfirmed) {
             if (err) { return next(err); }

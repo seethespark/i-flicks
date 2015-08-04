@@ -317,7 +317,6 @@ function updateUser(user, callback) {
     delete update.id;
     delete update.password;
     update.dateUpdated = new Date();
-
     //dbStartTime = new Date();
     nedb.globalDb.user.update({_id: userId}, {
         $set: update
@@ -625,7 +624,7 @@ var User = function () {
         get givenName() {return user.givenName; },
         set givenName(value) { user.givenName = value; },
         get familyName() {return user.familyName; },
-        set familyName(value) { user.familyName = value; },
+        set familyName(value) { user.familyName = value; console.log('SETTING'); },
         get emailAddress() {return user.emailAddress; },
         set emailAddress(value) { user.emailAddress = value; },
         get isSysAdmin() {return user.isSysAdmin; },

@@ -97,7 +97,7 @@ body {
 	text-align: left;
 	width: 90%;
 	max-width: 880px;
-	height: 150px;
+	max-height: 250px;
 	overflow: auto;
 	border-radius: 10px;
 	position: relative;
@@ -117,32 +117,36 @@ body {
 	right: 0px;
 	border-radius: 5px;
 }
+#createAccountContainer {
+	position: relative; /* required otherwise IE doesn't make children transparent */
+}
 .createAccountContainer {
 	position: absolute;
 	left: 150px;
 	height: 12px;
+	filter: inherit;
 }
-#videoList {
+#flickList {
 	text-align: center;
 }
-#videoContainer {
+#flickContainer {
 	/*width:80%;*/
 	max-width:880px;
 	margin-left: auto;
     margin-right: auto;
 }
-#videoInfo {
+#flickInfo {
 	padding: 4px;
 	position: relative;
 }
-#videoName {
+#flickName {
 	padding: 4px;
 	font-weight: bold;
 }
-#videoDescription {
+#flickDescription {
 	padding: 4px;
 }
-#videoRunCount {
+#flickRunCount {
 	padding: 4px;
 }
 #btnShowCopy{
@@ -268,6 +272,7 @@ body {
 }
 #uploadContainer{
 	/*max-height: 300px;*/
+	position: relative; /* required otherwise IE doesn't make children transparent */
 }
 #uploadContainer input[type="text"] {
 	position: absolute;
@@ -371,7 +376,7 @@ input[type="button"] {
 	/*width: 60px;*/
 	/*word-spacing: 0px;*/
 }
-.newVideoPopup {
+.newFlickPopup {
 	position: fixed;
 	bottom: 10px;
 	right: 10px;
@@ -458,12 +463,12 @@ input[type="button"] {
 	.vidName {
 		width: 45% - 10px;
 	}
-	#videoContainer {
+	#flickContainer {
 		text-align: center;
 		margin-right: auto;
 		margin-left: auto;
 	}
-	#videoInfo {
+	#flickInfo {
 		text-align: left;
 	}
 	.button {
@@ -476,12 +481,12 @@ input[type="button"] {
 	}
 }
 @media only screen and (max-width: 900px) {
-	#videoContainer {
+	#flickContainer {
 		/*width:80%;*/
 
 		max-width:500px;
 	}
-	#video {
+	#flick {
 		max-width:500px;
 	}
 }

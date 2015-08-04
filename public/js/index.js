@@ -1,10 +1,10 @@
-/** This is the master i-flicks object which controls uploads, playing and editing videos
+/** This is the master i-flicks object which controls uploads, playing and editing flicks
  */
 window.iflicks = (function iflicks(settings) {
     'use strict';
-    var vidTimeTicks = 0, intervalCheckEncoded, newVideoEvents, vjs, newVideoCount, previousDisplayedPage,
-        currentVideoDetail, currentOrientation, user = {}, videoListMaster = [], messages = [], loadingImage = new Image();
-    settings.videoListPageLength = settings.videoListPageLength || 10;
+    var vidTimeTicks = 0, intervalCheckEncoded, newFlickEvents, vjs, newFlickCount, previousDisplayedPage,
+        currentFlickDetail, currentOrientation, user = {}, flickListMaster = [], messages = [], loadingImage = new Image();
+    settings.flickListPageLength = settings.flickListPageLength || 10;
     loadingImage.src = '/img/loading.gif';
     currentOrientation = window.orientation;
 
@@ -78,8 +78,8 @@ window.iflicks = (function iflicks(settings) {
         if (message !== undefined && window.console !== undefined) {
             window.console.log((new Date()).toUTCString() + ' :: ' + location + ' :: ' + message);
         }
-        if (message.indexOf('<') === 0 && message.length > 90) {
-            message = 'Unexpected error.';
+        if (message !== undefined && message.indexOf('<') === 0 && message.length > 90) {
+            message = 'Unexpected error from server.';
         }
         if (message) {
             timeout = Date.now() + (timeout * 1000);
@@ -196,15 +196,15 @@ window.iflicks = (function iflicks(settings) {
             });
     }
 
-    function timeUpdate(video, time) {
+    function timeUpdate(flick, time) {
         vidTimeTicks++;
         if (user.id === undefined || vidTimeTicks % 10 !== 0) {
             return;
         }
-        if (time > video.fileDetail.duration - 5) {
+        if (time > flick.fileDetail.duration - 5) {
             time = 0;
         }
-        window.fetch('/timeupdate/' + video.id + '/' + time, {
+        window.fetch('/timeupdate/' + flick.id + '/' + time, {
             credentials: 'include',
             method: 'POST',
             headers: {
@@ -233,43 +233,43 @@ window.iflicks = (function iflicks(settings) {
         dims.viewportHeight = h;
         if (h > w && w < 400) {
             //showMessage('a', 'dims', 3);
-            dims.videoWidth = w;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = w;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'small';
         } else if (h > w && w >= 400 && w < 500) {
             //showMessage('b', 'dims', 3);
-            dims.videoWidth = 400;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = 400;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'small';
         } else if (h > w && w >= 500 && w < 800) {
             //showMessage('c', 'dims', 3);
-            dims.videoWidth = 500;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = 500;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'medium';
         } else if (h > w && w >= 800) {
             //showMessage('d', 'dims', 3);
-            dims.videoWidth = 880;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = 880;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'big';
         } else if (h <= w && w < 400) {
             //showMessage('e', 'dims', 3);
-            dims.videoWidth = w;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = w;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'small';
         } else if (h <= w && w >= 400 && w < 500) {
             //showMessage('f', 'dims', 3);
-            dims.videoWidth = 400;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = 400;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'small';
         } else if (h <= w && w >= 500 && w < 900) {
             //showMessage('g', 'dims', 3);
-            dims.videoWidth = 500;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = 500;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'medium';
         } else if (h <= w && w >= 900) {
             //showMessage('h', 'dims', 3);
-            dims.videoWidth = 880;
-            dims.videoHeight = dims.videoWidth / widthHeightRatio;
+            dims.flickWidth = 880;
+            dims.flickHeight = dims.flickWidth / widthHeightRatio;
             dims.src = 'big';
         } else {
             throw new Error('Unrecognised size');
@@ -278,7 +278,7 @@ window.iflicks = (function iflicks(settings) {
     }
     /** handler for the upload file. */
     function uploadFile() {
-        var imgFileElement = document.getElementById('videoFile'),
+        var imgFileElement = document.getElementById('flickFile'),
             uploadContainer = document.getElementById('uploadContainer'),
             uploadProgress = document.getElementById('uploadProgress'),
             i,
@@ -339,53 +339,53 @@ window.iflicks = (function iflicks(settings) {
     */
     }
 
-    /// Handler for the then videos are clicked
-    function showVideo(vid) {
-        var opts, i, vidDims, vidDetailElement, videoText, videoContainer, editData,
+    /// Handler for the then flicks are clicked
+    function showFlick(vid) {
+        var opts, i, flkDims, vidDetailElement, flickText, flickContainer, editData,
             vidPublicElement, vidPublicCheck, vidDirectLinkElement, vidDirectLinkCheck;
-        document.getElementById('videoList').classList.add('hide');
-        videoContainer = document.getElementById('videoContainer');
+        document.getElementById('flickList').classList.add('hide');
+        flickContainer = document.getElementById('flickContainer');
 
-        videoContainer.classList.remove('hide');
+        flickContainer.classList.remove('hide');
         clearInterval(intervalCheckEncoded);
 
         function btnEditClick(ev) {
             var btn = ev.target;
             if (btn.value === 'Edit') {
-                document.getElementById('videoName').contentEditable = true;
-                document.getElementById('videoName').classList.add('editable');
-                document.getElementById('videoDescription').contentEditable = true;
-                document.getElementById('videoDescription').classList.add('editable');
-                document.getElementById('videoTags').contentEditable = true;
-                document.getElementById('videoTags').classList.add('editable');
-                show(document.getElementById('videoTags'));
-                document.getElementById('videoPublic').classList.add('editable');
-                show(document.getElementById('videoPublic'));
-                document.getElementById('videoDirectLink').classList.add('editable');
-                show(document.getElementById('videoDirectLink'));
+                document.getElementById('flickName').contentEditable = true;
+                document.getElementById('flickName').classList.add('editable');
+                document.getElementById('flickDescription').contentEditable = true;
+                document.getElementById('flickDescription').classList.add('editable');
+                document.getElementById('flickTags').contentEditable = true;
+                document.getElementById('flickTags').classList.add('editable');
+                show(document.getElementById('flickTags'));
+                document.getElementById('flickPublic').classList.add('editable');
+                show(document.getElementById('flickPublic'));
+                document.getElementById('flickDirectLink').classList.add('editable');
+                show(document.getElementById('flickDirectLink'));
                 btn.value = 'Save';
             } else {
-                document.getElementById('videoName').contentEditable = false;
-                document.getElementById('videoName').classList.remove('editable');
-                document.getElementById('videoDescription').contentEditable = false;
-                document.getElementById('videoDescription').classList.remove('editable');
-                document.getElementById('videoTags').contentEditable = false;
-                document.getElementById('videoTags').classList.remove('editable');
-                hide(document.getElementById('videoTags'));
-                document.getElementById('videoPublic').classList.remove('editable');
-                hide(document.getElementById('videoPublic'));
-                document.getElementById('videoDirectLink').classList.remove('editable');
-                hide(document.getElementById('videoDirectLink'));
+                document.getElementById('flickName').contentEditable = false;
+                document.getElementById('flickName').classList.remove('editable');
+                document.getElementById('flickDescription').contentEditable = false;
+                document.getElementById('flickDescription').classList.remove('editable');
+                document.getElementById('flickTags').contentEditable = false;
+                document.getElementById('flickTags').classList.remove('editable');
+                hide(document.getElementById('flickTags'));
+                document.getElementById('flickPublic').classList.remove('editable');
+                hide(document.getElementById('flickPublic'));
+                document.getElementById('flickDirectLink').classList.remove('editable');
+                hide(document.getElementById('flickDirectLink'));
                 editData = {
                     id: vid,
-                    name: document.getElementById('videoName').textContent,
-                    description: document.getElementById('videoDescription').textContent,
-                    tags: document.getElementById('videoTags').textContent,
-                    public: document.getElementById('videoPublicCheck').checked,
-                    directLink: document.getElementById('videoDirectLinkCheck').checked
+                    name: document.getElementById('flickName').textContent,
+                    description: document.getElementById('flickDescription').textContent,
+                    tags: document.getElementById('flickTags').textContent,
+                    public: document.getElementById('flickPublicCheck').checked,
+                    directLink: document.getElementById('flickDirectLinkCheck').checked
                 };
                 btn.value = 'Edit';
-                window.fetch('/editvideo', {
+                window.fetch('/editflick', {
                     method: 'POST',
                     credentials: 'include',
                     body: JSON.stringify(editData),
@@ -399,12 +399,12 @@ window.iflicks = (function iflicks(settings) {
                     })
                     .then(function (json) {
                         if (json.All !== 'OK') {
-                            showMessage(json.error, 'showVideo.btnEditClick.save', 10);
+                            showMessage(json.error, 'showFlick.btnEditClick.save', 10);
                         }
                     })
                     .catch(function (ex) {
                         console.log('Error');
-                        showMessage(ex, 'showVideo.btnEditClick.save.1', 10);
+                        showMessage(ex, 'showFlick.btnEditClick.save.1', 10);
                     });
             }
         }
@@ -452,15 +452,15 @@ window.iflicks = (function iflicks(settings) {
                 })
                 .then(function (json) {
                     if (json.All !== 'OK') {
-                        showMessage(json.error, 'showVideo.copyFlickClick', 10);
+                        showMessage(json.error, 'showFlick.copyFlickClick', 10);
                     } else {
-                        showMessage('Received at destination', 'showVideo.copyFlickClick', 5);
+                        showMessage('Received at destination', 'showFlick.copyFlickClick', 5);
                         document.getElementById('copyFlickPanel').classList.add('hide');
                     }
                 })
                 .catch(function (ex) {
                     console.log('Error');
-                    showMessage(ex, 'showVideo.copyFlickClick.1', 10);
+                    showMessage(ex, 'showFlick.copyFlickClick.1', 10);
                 });
         }
         function copyFlick(vid) {
@@ -497,7 +497,94 @@ window.iflicks = (function iflicks(settings) {
             return form;
         }
 
-        function rating(videoId, currentValue) {
+        function btnShowPermissions() {
+            var btn = document.createElement('input');
+            btn.type = 'button';
+            btn.value = 'Permissions';
+            btn.id = 'btnShowPermissions';
+            addListener(btn, 'click', true, function (ev) {
+                if (ev.target.value === 'Permissions') {
+                    document.getElementById('permissionsPanel').classList.remove('hide');
+                }
+            });
+            return btn;
+        }
+        function permissionsAddClick(ev) {
+            var body = {};
+            body.id = ev.target.id.split('_')[1];
+            body.searchTerm = permissionPanelInput.value;
+            window.fetch('/flickuser', {
+                method: 'PUT',
+                credentials: 'include',
+                body: JSON.stringify(body),
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (json) {
+                    if (json.All !== 'OK') {
+                        showMessage(json.error, 'showFlick.permissionsAddClick', 10);
+                    } else {
+                        showMessage('Received at destination', 'showFlick.permissionsAddClick', 5);
+                        document.getElementById('permissionsPanel').classList.add('hide');
+                    }
+                })
+                .catch(function (ex) {
+                    console.log('Error');
+                    showMessage(ex, 'showFlick.permissionsAddClick.1', 10);
+                });
+        }
+        function permissionsPanel(vid) {
+            var form, btn, dest, uname, pwd;
+            btn = document.createElement('input');
+            btn.type = 'button';
+            btn.value = 'Send';
+            btn.id = 'permissions_' + vid;
+            addListener(btn, 'click', true, permissionsAddClick);
+
+            dest = document.createElement('input');
+            dest.type = 'text';
+            dest.name = 'user';
+            dest.id = 'permissionPanelInput';
+            dest.placeholder = 'Users';
+
+            form = document.createElement('div');
+            form.className = 'hide';
+            form.id = 'permissionsPanel';
+            form.appendChild(dest);
+            form.appendChild(btn);
+
+            return form;
+        }
+        function permissionsItem(userId, email, username) {
+            var form, btn, dest, uname, pwd;
+            btn = document.createElement('input');
+            btn.type = 'button';
+            btn.value = 'Send';
+            btn.id = 'permissions_' + vid;
+            addListener(btn, 'click', true, permissionsSaveClick);
+
+            dest = document.createElement('input');
+            dest.type = 'text';
+            dest.name = 'users';
+            dest.placeholder = 'Users';
+
+            form = document.createElement('div');
+            form.className = 'hide';
+            form.id = 'permissionsPanel';
+            form.appendChild(dest);
+            form.appendChild(btn);
+
+            return form;
+        }
+
+
+
+        function rating(flickId, currentValue) {
             var star, ratingPanel = document.createElement('div'),
                 container = document.createElement('div');
             container.className = 'ratingContainer';
@@ -518,7 +605,7 @@ window.iflicks = (function iflicks(settings) {
 
             addListener(container, 'click', true, function (ev) {
                 var newRating = ev.target.id.split('_')[1];
-                window.fetch('/rating/' + videoId + '/' + newRating, {
+                window.fetch('/rating/' + flickId + '/' + newRating, {
                     credentials: 'include',
                     method: 'POST',
                     headers: {
@@ -531,11 +618,11 @@ window.iflicks = (function iflicks(settings) {
                     })
                     .then(function (json) {
                         if (json.All !== 'OK') {
-                            showMessage(json.error, 'showVideo.rating.save', 7);
+                            showMessage(json.error, 'showFlick.rating.save', 7);
                         }
                         var tmpNode = ev.target.parentNode.parentNode.parentNode;
                         tmpNode.removeChild(ev.target.parentNode.parentNode);
-                        tmpNode.appendChild(rating(videoId, newRating));
+                        tmpNode.appendChild(rating(flickId, newRating));
                     })
                     .catch(function (ex) {
                         showMessage(ex, 'timeUpdate', 6);
@@ -545,33 +632,32 @@ window.iflicks = (function iflicks(settings) {
             return container;
         }
 
-        function setVideoDetail() {
-            if (currentVideoDetail.fileDetail && currentVideoDetail.fileDetail.width) {
-                vidDims = getViewerDimensions(currentVideoDetail.fileDetail.width, currentVideoDetail.fileDetail.height);
+        function setFlickDetail() {
+            if (currentFlickDetail.fileDetail && currentFlickDetail.fileDetail.width) {
+                flkDims = getViewerDimensions(currentFlickDetail.fileDetail.width, currentFlickDetail.fileDetail.height);
             } else {
-                vidDims = getViewerDimensions(800, 600);
+                flkDims = getViewerDimensions(800, 600);
             }
-
-            videoContainer.innerHTML = '<video id="video" poster="/thumb/' + vid + '/' + vidDims.src + '" data-setup="{}"  class="video-js vjs-default-skin" >' +
-                    '<source src="/video/' + vid + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() + '" type="video/mp4"></source>' +
-                    '<source src="/video/' + vid + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() + '" type="video/webm"></source>' +
-                    '<source src="/video/' + vid + '/' + vidDims.src + '.ogv?r=' + (new Date()).getTime() + '" type="video/ogg"></source>' +
+            flickContainer.innerHTML = '<video id="flick" poster="/thumb/' + vid + '/' + flkDims.src + '" data-setup="{}"  class="video-js vjs-default-skin" >' +
+                    '<source src="/flick/' + vid + '/' + flkDims.src + '.mp4?r=' + (new Date()).getTime() + '" type="video/mp4"></source>' +
+                    '<source src="/flick/' + vid + '/' + flkDims.src + '.webm?r=' + (new Date()).getTime() + '" type="video/webm"></source>' +
+                    '<source src="/flick/' + vid + '/' + flkDims.src + '.ogv?r=' + (new Date()).getTime() + '" type="video/ogg"></source>' +
                     '</video>' +
                     '<div ></div>';
             opts = {
                 'controls': true,
                 'autoplay': false,
                 'preload': 'auto',
-                'width': vidDims.videoWidth,
-                'height': vidDims.videoHeight
+                'width': flkDims.flickWidth,
+                'height': flkDims.flickHeight
             };
-            vjs = videojs(document.getElementById('video'), opts, function () { });
-            if (currentVideoDetail.currentTime) {
-                vjs.currentTime(currentVideoDetail.currentTime);
+            vjs = videojs(document.getElementById('flick'), opts, function () { });
+            if (currentFlickDetail.currentTime) {
+                vjs.currentTime(currentFlickDetail.currentTime);
             }
-            vjs.on('error', function (err) { showMessage(err.message, 'showVideo.setVideoDetail.vjs.error', 10); });
+            vjs.on('error', function (err) { showMessage(err.message, 'showFlick.setFlickDetail.vjs.error', 10); });
             vjs.one('play', function () {
-                window.fetch('/playVideo/' + vid, {
+                window.fetch('/playFlick/' + vid, {
                     credentials: 'include',
                     method: 'POST',
                     headers: {
@@ -584,90 +670,92 @@ window.iflicks = (function iflicks(settings) {
                     });
             });
             vjs.on('volumechange', function (ev) { user.options.volume = ev.target.volume; setOption('volume', ev.target.volume); });
-            vjs.on('timeupdate', function () { timeUpdate(currentVideoDetail, vjs.currentTime()); });
+            vjs.on('timeupdate', function () { timeUpdate(currentFlickDetail, vjs.currentTime()); });
 
             if (user.options && user.options.volume) {
-                vjs.volume(user.options.volume);
+                //vjs.volume(user.options.volume);
             }
 
-            videoText = document.createElement('div');
-            videoText.id = 'videoInfo';
+            flickText = document.createElement('div');
+            flickText.id = 'flickInfo';
             vidDetailElement = document.createElement('div');
-            vidDetailElement.id = 'videoName';
-            vidDetailElement.className = 'videoTextItem';
-            vidDetailElement.title = 'Video name';
-            vidDetailElement.textContent = currentVideoDetail.name;
-            videoText.appendChild(vidDetailElement);
+            vidDetailElement.id = 'flickName';
+            vidDetailElement.className = 'flickTextItem';
+            vidDetailElement.title = 'Flick name';
+            vidDetailElement.textContent = currentFlickDetail.name;
+            flickText.appendChild(vidDetailElement);
 
             vidDetailElement = document.createElement('div');
-            vidDetailElement.id = 'videoDescription';
-            vidDetailElement.className = 'videoTextItem';
-            vidDetailElement.title = 'Video description';
-            vidDetailElement.textContent = currentVideoDetail.description;
-            videoText.appendChild(vidDetailElement);
+            vidDetailElement.id = 'flickDescription';
+            vidDetailElement.className = 'flickTextItem';
+            vidDetailElement.title = 'Flick description';
+            vidDetailElement.textContent = currentFlickDetail.description;
+            flickText.appendChild(vidDetailElement);
 
             vidDetailElement = document.createElement('div');
-            vidDetailElement.id = 'videoTags';
-            vidDetailElement.className = 'videoTextItem';
-            vidDetailElement.title = 'Video tags';
-            vidDetailElement.textContent = currentVideoDetail.tags;
+            vidDetailElement.id = 'flickTags';
+            vidDetailElement.className = 'flickTextItem';
+            vidDetailElement.title = 'Flick tags';
+            vidDetailElement.textContent = currentFlickDetail.tags;
             hide(vidDetailElement);
-            videoText.appendChild(vidDetailElement);
+            flickText.appendChild(vidDetailElement);
 
             vidPublicElement = document.createElement('div');
-            vidPublicElement.id = 'videoPublic';
-            vidPublicElement.className = 'videoTextItem';
+            vidPublicElement.id = 'flickPublic';
+            vidPublicElement.className = 'flickTextItem';
             vidPublicElement.textContent = 'Public';
             vidPublicCheck = document.createElement('input');
-            vidPublicCheck.id = 'videoPublicCheck';
+            vidPublicCheck.id = 'flickPublicCheck';
             vidPublicCheck.type = 'checkbox';
             vidPublicCheck.name = 'public';
-            vidPublicCheck.checked = currentVideoDetail.isPublic;
+            vidPublicCheck.checked = currentFlickDetail.isPublic;
             hide(vidPublicElement);
             vidPublicElement.appendChild(vidPublicCheck);
-            videoText.appendChild(vidPublicElement);
+            flickText.appendChild(vidPublicElement);
 
             vidDirectLinkElement = document.createElement('div');
-            vidDirectLinkElement.id = 'videoDirectLink';
-            vidDirectLinkElement.className = 'videoTextItem';
+            vidDirectLinkElement.id = 'flickDirectLink';
+            vidDirectLinkElement.className = 'flickTextItem';
             vidDirectLinkElement.textContent = 'Allow direct link';
             vidDirectLinkCheck = document.createElement('input');
-            vidDirectLinkCheck.id = 'videoDirectLinkCheck';
+            vidDirectLinkCheck.id = 'flickDirectLinkCheck';
             vidDirectLinkCheck.type = 'checkbox';
             vidDirectLinkCheck.name = 'directLink';
-            vidDirectLinkCheck.checked = currentVideoDetail.isDirectLinkable;
+            vidDirectLinkCheck.checked = currentFlickDetail.isDirectLinkable;
             hide(vidDirectLinkElement);
             vidDirectLinkElement.appendChild(vidDirectLinkCheck);
-            videoText.appendChild(vidDirectLinkElement);
+            flickText.appendChild(vidDirectLinkElement);
 
             vidDetailElement = document.createElement('div');
-            vidDetailElement.id = 'videoRunCount';
-            vidDetailElement.className = 'videoTextItem';
-            vidDetailElement.textContent = 'Played ' + currentVideoDetail.playCount + ' time' + (currentVideoDetail.playCount === 1 ? '' : 's');
-            videoText.appendChild(vidDetailElement);
+            vidDetailElement.id = 'flickRunCount';
+            vidDetailElement.className = 'flickTextItem';
+            vidDetailElement.textContent = 'Played ' + (currentFlickDetail.playCount || 0) + ' time' + (currentFlickDetail.playCount === 1 ? '' : 's');
+            flickText.appendChild(vidDetailElement);
 
-            if (user.id !== undefined && (currentVideoDetail.userId === user.id || user.isSysAdmin === true)) {
-                videoText.appendChild(btnEdit());
-                videoText.appendChild(btnShowCopy());
+            if (user.id !== undefined && (currentFlickDetail.userId === user.id || user.isSysAdmin === true)) {
+                flickText.appendChild(btnEdit());
+                flickText.appendChild(btnShowPermissions());
+                flickText.appendChild(btnShowCopy());
 
             }
-            //console.log(currentVideoDetail);
-            videoText.appendChild(rating(vid, currentVideoDetail.rating));
-            videoText.appendChild(copyFlick(vid));
-            videoContainer.appendChild(videoText);
+            //console.log(currentFlickDetail);
+            flickText.appendChild(rating(vid, currentFlickDetail.rating));
+            flickText.appendChild(permissionsPanel(vid));
+            flickText.appendChild(copyFlick(vid));
+            flickContainer.appendChild(flickText);
         }
 
-        for (i = 0; i < videoListMaster.length; i++) {
-            if (videoListMaster[i].id === vid) {
-                currentVideoDetail = videoListMaster[i];
+        for (i = 0; i < flickListMaster.length; i++) {
+            if (flickListMaster[i].id === vid) {
+                currentFlickDetail = flickListMaster[i];
                 break;
             }
         }
 
-        if (currentVideoDetail) {
-            setVideoDetail();
+        if (currentFlickDetail) {
+            setFlickDetail();
         } else {
-            window.fetch('/videodetail/' + vid, {
+            window.fetch('/flickdetail/' + vid, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -679,34 +767,34 @@ window.iflicks = (function iflicks(settings) {
                 })
                 .then(function (json) {
                     if (json.error) {
-                        showMessage(json.error, 'showVideo.fetchVideoDetail', 10);
+                        showMessage(json.error, 'showFlick.fetchFlickDetail', 10);
                     } else {
-                        currentVideoDetail = json;
-                        setVideoDetail();
+                        currentFlickDetail = json;
+                        setFlickDetail();
                     }
                 })
                 .catch(function (ex) {
                     console.log('Error');
-                    showMessage(ex.message, 'showVideo.fetchVideoDetail1', 10);
+                    showMessage(ex.message, 'showFlick.fetchFlickDetail1', 10);
                 });
         }
     }
 
-    function showVideoOnLoad(vid) {
+    function showFlickOnLoad(vid) {
 
-        window.history.replaceState({method: 'showVideo', vid: vid}, 'Play video', window.location.href );
-        showVideo(vid);
+        window.history.replaceState({method: 'showFlick', vid: vid}, 'Play flick', window.location.href );
+        showFlick(vid);
     }
                 
 
-    /// Print the video list tothe browser.
-    function listVideosShow(vids) {
+    /// Print the flick list tothe browser.
+    function listFlicksShow(vids) {
         //console.log(list);
-        var j, list, videoList, vidFrag, vidContent, vidName, vidNameText,  vidDelete;
+        var j, list, flickList, vidFrag, vidContent, vidName, vidNameText,  vidDelete;
         list = vids.data;
-        videoList = document.getElementById('videoList');
-        while (videoList.firstChild) {
-            videoList.removeChild(videoList.firstChild);
+        flickList = document.getElementById('flickList');
+        while (flickList.firstChild) {
+            flickList.removeChild(flickList.firstChild);
         }
         if (list === undefined) { return; }
         vidFrag = document.createDocumentFragment();
@@ -771,28 +859,28 @@ window.iflicks = (function iflicks(settings) {
                 var vidName, currentState = window.history.state || {};
                 vidName = vid.name || '-';
                 vidName = vidName.replace(' ', '_');
-                currentState.method = 'listVideos';
+                currentState.method = 'listFlicks';
                 currentState.scrollTop = document.body.scrollTop;
                 currentState.page = vids.page;
                 currentState.limit = vids.limit;
                 currentState.search = vids.search;
-                window.history.replaceState(currentState, 'List video', '');
-                window.history.pushState({method: 'showVideo', vid: vid.id}, 'Show video', '/' + vidName + '/' + vid.id);
-                showVideo(vid.id);
+                window.history.replaceState(currentState, 'List flick', '');
+                window.history.pushState({method: 'showFlick', vid: vid.id}, 'Show flick', '/' + vidName + '/' + vid.id);
+                showFlick(vid.id);
             }
             if (vid.isEncoded === true) {
                 /*addListener(vidContainer, 'click', true, 
                 //vidContainer.onclick = 
                     function () {
                         var currentState = window.history.state || {};
-                        currentState.method = 'listVideos';
+                        currentState.method = 'listFlicks';
                         currentState.scrollTop = document.body.scrollTop;
                         currentState.page = vid.page;
                         currentState.limit = vid.limit;
                         currentState.search = vid.search;
-                        window.history.replaceState(currentState, 'List video', '');
-                        window.history.pushState({method: 'showVideo', vid: vid._id}, 'Play video', '/' + vid._id);
-                        showVideo(vid._id);
+                        window.history.replaceState(currentState, 'List flick', '');
+                        window.history.pushState({method: 'showFlick', vid: vid._id}, 'Play flick', '/' + vid._id);
+                        showFlick(vid._id);
                 });*/
                 var longPress;
                 addListener(vidContainer, 'mousedown', true, function (ev) {
@@ -821,11 +909,11 @@ window.iflicks = (function iflicks(settings) {
             //vidDelete.onclick = 
                 function (e) {
                     clearTimeout(pressTimer);
-                    deleteVideo(vid.id);
-                    videoList.removeChild(vidContainer);
-                    for (j = 0; j < videoListMaster.length; j++) {
-                        if (videoListMaster[j].id === vid.id) {
-                            videoListMaster.splice(j, 1);
+                    deleteFlick(vid.id);
+                    flickList.removeChild(vidContainer);
+                    for (j = 0; j < flickListMaster.length; j++) {
+                        if (flickListMaster[j].id === vid.id) {
+                            flickListMaster.splice(j, 1);
                             break;
                         }
                     }
@@ -833,11 +921,11 @@ window.iflicks = (function iflicks(settings) {
                 });
 
             if (i % 10 === 0) {
-                videoList.appendChild(vidFrag);
+                flickList.appendChild(vidFrag);
                 vidFrag = document.createDocumentFragment();
             }
         });
-        videoList.appendChild(vidFrag);
+        flickList.appendChild(vidFrag);
 
         var nextPrev, nextPage, prevPage;
         nextPrev = document.createElement('div');
@@ -848,8 +936,8 @@ window.iflicks = (function iflicks(settings) {
         nextPrev.id = 'nextPrev';
         nextPage.className = 'nextPrev';
         prevPage.className = 'nextPrev';
-        addListener(nextPage, 'click', true, function () {vids.page++; listVideos(vids.page , vids.limit, vids.search); });
-        addListener(prevPage, 'click', true, function () {vids.page--; listVideos(vids.page, vids.limit, vids.search); });
+        addListener(nextPage, 'click', true, function () {vids.page++; listFlicks(vids.page , vids.limit, vids.search); });
+        addListener(prevPage, 'click', true, function () {vids.page--; listFlicks(vids.page, vids.limit, vids.search); });
 
         if (vids.page > 0) {
             nextPrev.appendChild(prevPage);
@@ -857,43 +945,43 @@ window.iflicks = (function iflicks(settings) {
         if (vids.count > ((vids.page + 1) * vids.limit)) {
             nextPrev.appendChild(nextPage);
         }
-        videoList.appendChild(nextPrev);
+        flickList.appendChild(nextPrev);
     }
 
-    /// Get videos from the server and display them
-    function listVideos(page, limit, search) {
-        var i, video, videoList, videoContainer, newVideoPopup;
+    /// Get flicks from the server and display them
+    function listFlicks(page, limit, search) {
+        var i, flick, flickList, flickContainer, newFlickPopup;
         page = page || 0;
         limit = limit || 10;
         search = search || '-';
-        newVideoCount = 0;
-        currentVideoDetail = undefined;
-        videoList = document.getElementById('videoList');
-        videoList.classList.remove('hide');
-        document.getElementById('videoListUnencoded').classList.add('hide');
-        videoContainer = document.getElementById('videoContainer');
-        videoContainer.classList.add('hide');
-        while (videoContainer.firstChild) {
-            videoContainer.removeChild(videoContainer.firstChild);
+        newFlickCount = 0;
+        currentFlickDetail = undefined;
+        flickList = document.getElementById('flickList');
+        flickList.classList.remove('hide');
+        document.getElementById('flickListUnencoded').classList.add('hide');
+        flickContainer = document.getElementById('flickContainer');
+        flickContainer.classList.add('hide');
+        while (flickContainer.firstChild) {
+            flickContainer.removeChild(flickContainer.firstChild);
         }
-        video = document.getElementById('video');
-        if (video !== null) {
-            videojs(video).dispose();
+        flick = document.getElementById('flick');
+        if (flick !== null) {
+            videojs(flick).dispose();
         }
-        newVideoPopup = document.getElementsByClassName('newVideoPopup');
-        for (i = 0; i < newVideoPopup.length; i++) {
-            newVideoPopup[i].parentNode.removeChild(newVideoPopup[i]);
+        newFlickPopup = document.getElementsByClassName('newFlickPopup');
+        for (i = 0; i < newFlickPopup.length; i++) {
+            newFlickPopup[i].parentNode.removeChild(newFlickPopup[i]);
         }
 
         clearInterval(intervalCheckEncoded);
         /// If we have already loaded the data from the server then reuse it.
-        if (videoListMaster.length > 0) {
+        if (flickListMaster.length > 0) {
             /// If the master list and the number of elements don't match then start again
-            if (videoList.children.length !== videoListMaster.length) {
-                listVideosShow(videoListMaster);
+            if (flickList.children.length !== flickListMaster.length) {
+                listFlicksShow(flickListMaster);
             }
         } else {
-            window.fetch('/videolist/' + page + '/' + limit + '/' + search, {
+            window.fetch('/flicklist/' + page + '/' + limit + '/' + search, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -905,35 +993,35 @@ window.iflicks = (function iflicks(settings) {
                 })
                 .then(function (json) {
                     if (json.error !== undefined) {
-                        showMessage(json.error, 'listUnencoded.fetchVideoList', 6);
+                        showMessage(json.error, 'listUnencoded.fetchFlickList', 6);
                     } else if (Array.isArray(json.data)) {
-                        videoListMaster = json;
-                        listVideosShow(videoListMaster);
+                        flickListMaster = json;
+                        listFlicksShow(flickListMaster);
                     } else {
-                        showMessage('Non array type returned.', 'listtVideos.fetchVideoList', 6);
+                        showMessage('Non array type returned.', 'listtFlicks.fetchFlickList', 6);
                     }
                 })
                 .catch(function (ex) {
-                    showMessage(ex, 'listtVideos.fetchVideoList1', 10);
+                    showMessage(ex, 'listtFlicks.fetchFlickList1', 10);
                 });
         }
     }
 
-    function watchForNewVideos() {
+    function watchForNewFlicks() {
         /// Check the browser supports EventSource.  If it's IE then the user has to refresh manually.
         if (window.EventSource !== undefined) {
-            newVideoEvents = new window.EventSource('/newvideo');
-            addListener(newVideoEvents, 'newVideo', false, function () {
-            //newVideoEvents.addEventListener('newVideo',  function () {
+            newFlickEvents = new window.EventSource('/newflick');
+            addListener(newFlickEvents, 'newFlick', false, function () {
+            //newFlickEvents.addEventListener('newFlick',  function () {
                 var pop = document.createElement('div');
-                newVideoCount++;
-                pop.className = 'newVideoPopup';
-                pop.innerHTML = '<p>There are ' + newVideoCount + ' new videos</p>';
+                newFlickCount++;
+                pop.className = 'newFlickPopup';
+                pop.innerHTML = '<p>There are ' + newFlickCount + ' new flicks</p>';
 
                 addListener(pop, 'click', true, function () {
                 //pop.addEventListener('click', function () {
-                    window.history.pushState({method: 'listVideos'}, 'List video', '/');
-                    listVideos(0, settings.videoListPageLength);
+                    window.history.pushState({method: 'listFlicks'}, 'List flick', '/');
+                    listFlicks(0, settings.flickListPageLength);
                 });
 
                 document.body.appendChild(pop);
@@ -942,25 +1030,25 @@ window.iflicks = (function iflicks(settings) {
         }
     }
 
-    /// Get videos from the server and display them
+    /// Get flicks from the server and display them
     function listUnencoded(page, limit) {
-        var video, videoList, videoContainer;
-        currentVideoDetail = undefined;
-        videoList = document.getElementById('videoList');
-        videoList.classList.remove('hide');
-        document.getElementById('videoListUnencoded').classList.add('hide');
-        videoContainer = document.getElementById('videoContainer');
-        videoContainer.classList.add('hide');
-        while (videoContainer.firstChild) {
-            videoContainer.removeChild(videoContainer.firstChild);
+        var flick, flickList, flickContainer;
+        currentFlickDetail = undefined;
+        flickList = document.getElementById('flickList');
+        flickList.classList.remove('hide');
+        document.getElementById('flickListUnencoded').classList.add('hide');
+        flickContainer = document.getElementById('flickContainer');
+        flickContainer.classList.add('hide');
+        while (flickContainer.firstChild) {
+            flickContainer.removeChild(flickContainer.firstChild);
         }
 
-        video = document.getElementById('video');
-        if (video !== null) {
-            videojs(video).dispose();
+        flick = document.getElementById('flick');
+        if (flick !== null) {
+            videojs(flick).dispose();
         }
         function getUnencoded() {
-            window.fetch('/videolistunencoded/' + page + '/' + limit, {
+            window.fetch('/flicklistunencoded/' + page + '/' + limit, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -974,7 +1062,7 @@ window.iflicks = (function iflicks(settings) {
                     if (json.error !== undefined) {
                         showMessage(json.error, 'listUnencoded.getUnencoded', 6);
                     } else if (Array.isArray(json.data)) {
-                        listVideosShow(json);
+                        listFlicksShow(json);
                     } else {
                         showMessage('Non array type returned.', 'listUnencoded.getUnencoded', 6);
                     }
@@ -988,23 +1076,23 @@ window.iflicks = (function iflicks(settings) {
         intervalCheckEncoded = setInterval(getUnencoded, 5000);
     }
 
-    function deleteVideo(vid) {
-        window.fetch('/video/' + vid, {
+    function deleteFlick(vid) {
+        window.fetch('/flick/' + vid, {
             credentials: 'include',
             method: 'DELETE'
         })
             .catch(function (ex) {
-                showMessage(ex, 'deleteVideo.fetch', 6);
+                showMessage(ex, 'deleteFlick.fetch', 6);
             });
     }
 
-    function unDeleteVideo(vid) {
+    function unDeleteFlick(vid) {
         window.fetch('/undelete/' + vid, {
             credentials: 'include',
             method: 'POST'
         })
             .catch(function (ex) {
-                showMessage(ex, 'undeleteVideo.fetch', 6);
+                showMessage(ex, 'undeleteFlick.fetch', 6);
             });
     }
 
@@ -1069,7 +1157,7 @@ window.iflicks = (function iflicks(settings) {
         var thumbVid = document.getElementById('thumbVid');
 
         var thumbVidCanvas = document.getElementById('thumbVidCanvas');
-        var file    = document.getElementById('videoFile').files[0];
+        var file    = document.getElementById('flickFile').files[0];
         var reader  = new FileReader();
 
         reader.onloadend = function () {
@@ -1116,7 +1204,7 @@ window.iflicks = (function iflicks(settings) {
             }
             
             document.getElementById('message').textContent  = '';
-            listVideosShow(videoListMaster);
+            listFlicksShow(flickListMaster);
             /// Dopn't show the upload button in <=IE9
             if (window.FormData === undefined) {
                 document.getElementById('showUploadContainer').style.display = 'none';
@@ -1212,7 +1300,7 @@ window.iflicks = (function iflicks(settings) {
             speed = bitsLoaded / duration / 1024 / 1024;
             if (speed < 1) {
                 speed = (speed * 1.8).toFixed(2);  // Seems to be out by just under half
-                showMessage('The internet speed between you and us is slow (' + speed + ' Mbps) so these videos may not play smoothly.', 'downloadSpeedTest', 7);
+                showMessage('The internet speed between you and us is slow (' + speed + ' Mbps) so these flicks may not play smoothly.', 'downloadSpeedTest', 7);
             }
         };
         startTime = (new Date()).getTime();
@@ -1220,12 +1308,12 @@ window.iflicks = (function iflicks(settings) {
     }
 
     /// Check to see if the browser supports HTML5 vieo, returns boolean
-    function supportsVideo() {
-        return !!document.createElement('video').canPlayType;
+    function supportsFlick() {
+        return !!document.createElement('flick').canPlayType;
     }
     /// Checks the browser is suported and then runs the callback.
     function checkFeatures(callback) {
-        /*if (window.FormData === undefined || supportsVideo() !== true) {
+        /*if (window.FormData === undefined || supportsFlick() !== true) {
             document.getElementById('body').innerHTML = '<p>Your browser is not supported.  i-flicks is supported by all modern browsers.  It doesn\'t work on old versions of Internet Explorer or old mobile browsers.</p>';
             return;
         }*/
@@ -1249,14 +1337,14 @@ window.iflicks = (function iflicks(settings) {
         if (ev) { ev.preventDefault(); }
         var searchTerm = document.getElementById('search').value.trim();
         if (searchTerm === undefined || searchTerm === null || searchTerm.length === 0) {return;}
-        window.history.pushState({method: 'listVideos', search: searchTerm}, 'Search video', '/');
-        listVideos(0, settings.videoListPageLength, searchTerm);
+        window.history.pushState({method: 'listFlicks', search: searchTerm}, 'Search flick', '/');
+        listFlicks(0, settings.flickListPageLength, searchTerm);
     }
 
     /// Setup the page.  Checks the browser is supported and then loads the page.
     function start() {
         checkFeatures(function () {
-            addListener('submitUploadNewVideo', 'click', true, uploadFile);
+            addListener('submitUploadNewFlick', 'click', true, uploadFile);
             addListener('submitLogin', 'click', true, login);
             addListener('submitLogout', 'click', true, logout);
             addListener('submitSearch', 'click', true, searchSubmit);
@@ -1271,26 +1359,26 @@ window.iflicks = (function iflicks(settings) {
             addListener('showUploadContainer', 'click', true, showUploadContainer);
             addListener('showCreateAccount', 'click', true, showCreateAccount);
             addListener('submitCreateAccount', 'click', true, addUserHandler);
-            addListener('showVideoList', 'click', true, function () {
-                window.history.pushState({method: 'listVideos'}, 'List video', '/');
-                listVideos(0, settings.videoListPageLength);
+            addListener('showFlickList', 'click', true, function () {
+                window.history.pushState({method: 'listFlicks'}, 'List flick', '/');
+                listFlicks(0, settings.flickListPageLength);
             });
-            addListener('showUnencodedVideoList', 'click', true, function () {
-                window.history.pushState({method: 'listUnencoded'}, 'List unencoded videos', '/');
-                listUnencoded(0, settings.videoListPageLength);
+            addListener('showUnencodedFlickList', 'click', true, function () {
+                window.history.pushState({method: 'listUnencoded'}, 'List unencoded flicks', '/');
+                listUnencoded(0, settings.flickListPageLength);
             });
             /// forward and back button handler.
             addListener(window, 'popstate', true, function (event) {
                 //console.log(event.state);
-                if (event.state.method === 'showVideo') {
-                    showVideo(event.state.vid);
-                } else if (event.state.method === 'listVideos') {
-                    listVideos(event.state.page, event.state.limit, event.state.search);
+                if (event.state.method === 'showFlick') {
+                    showFlick(event.state.vid);
+                } else if (event.state.method === 'listFlicks') {
+                    listFlicks(event.state.page, event.state.limit, event.state.search);
                     if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
                         window.scroll(event.state.scrollTop, 0);
                     }
                 } else if (event.state.method === 'search') {
-                    listVideos(event.state.page, event.state.limit, event.state.search);
+                    listFlicks(event.state.page, event.state.limit, event.state.search);
                     if (event.state.scrollTop !== undefined && event.state.scrollTop > 0) {
                         window.scroll(event.state.scrollTop, 0);
                     }
@@ -1298,15 +1386,15 @@ window.iflicks = (function iflicks(settings) {
             });
             /// handle rotation on mobile devices
             addListener(window, 'resize', true, function () {
-                var vidDims, currentTime, isPaused;
-                if (currentVideoDetail !== undefined && currentVideoDetail.fileDetail && currentVideoDetail.fileDetail.width && currentOrientation !== window.orientation) {
+                var flkDims, currentTime, isPaused;
+                if (currentFlickDetail !== undefined && currentFlickDetail.fileDetail && currentFlickDetail.fileDetail.width && currentOrientation !== window.orientation) {
                     currentOrientation = window.orientation;
-                    vidDims = getViewerDimensions(currentVideoDetail.fileDetail.width, currentVideoDetail.fileDetail.height);
+                    flkDims = getViewerDimensions(currentFlickDetail.fileDetail.width, currentFlickDetail.fileDetail.height);
                     currentTime = vjs.currentTime();
                     isPaused = vjs.paused();
-                    vjs.dimensions(vidDims.videoWidth, vidDims.videoHeight);
-                    vjs.src([{type: 'video/mp4', src: '/video/' + currentVideoDetail.id + '/' + vidDims.src + '.mp4?r=' + (new Date()).getTime() },
-                            {type: 'video/webm', src: '/video/' + currentVideoDetail.id + '/' + vidDims.src + '.webm?r=' + (new Date()).getTime() }
+                    vjs.dimensions(flkDims.flickWidth, flkDims.flickHeight);
+                    vjs.src([{type: 'flick/mp4', src: '/flick/' + currentFlickDetail.id + '/' + flkDims.src + '.mp4?r=' + (new Date()).getTime() },
+                            {type: 'flick/webm', src: '/flick/' + currentFlickDetail.id + '/' + flkDims.src + '.webm?r=' + (new Date()).getTime() }
                         ]);
                     vjs.currentTime(currentTime);
                     if (!isPaused) {
@@ -1315,8 +1403,8 @@ window.iflicks = (function iflicks(settings) {
                 }
             });
             loginCheck();
-            watchForNewVideos();
-            listVideos(0, settings.videoListPageLength);
+            watchForNewFlicks();
+            listFlicks(0, settings.flickListPageLength);
             downloadSpeedTest();
         });
         cookieCheck();
@@ -1331,6 +1419,6 @@ window.iflicks = (function iflicks(settings) {
     start();
 
     return {
-        showVideoOnLoad: showVideoOnLoad
+        showFlickOnLoad: showFlickOnLoad
     };
 }({}));

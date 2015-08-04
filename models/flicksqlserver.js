@@ -297,6 +297,7 @@ function flickSqlServer() {
         flickUser.update(flickId, userId, colValues, callback);
     }
 
+    function doAddRating(flickId, rating, userId, ipAddress, callback) {callback();}
     this.flickFromDatabase = function (flick) {
         return doFlickFromDatabase(flick);
     };
@@ -314,6 +315,9 @@ function flickSqlServer() {
     };
     this.removeUser = function (flickId, userId, callback) {
         return doRemoveUser(flickId, userId, callback);
+    };
+    this.addRating = function (flickId, rating, userId, ipAddress, callback) {
+        return doAddRating(flickId, rating, userId, ipAddress, callback);
     };
 }
 
