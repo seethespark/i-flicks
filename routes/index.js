@@ -16,6 +16,7 @@ var flickUser = require('../models/flickUser');
 var User = require('../models/user');
 var utils = require('../lib/utils');
 var logger = require('../lib/logger');
+var packagejson = require('../package.json');
 
 /** 
  * Main user interface support.
@@ -70,6 +71,7 @@ router.get('/', function (req, res, next) {
         showCookieBanner: showCookieBanner,
         showInfo: showInfo,
         info: info,
+        version: '-- v' + packagejson.version,
         googleAnalyticsId: global.iflicks_settings.googleAnalyticsId
     });
 });
@@ -472,6 +474,25 @@ router.post('/copy', function (req, res, next) {
         });
 });
 
+/** GET grant list of flick users
+* 
+*/
+router.get('/flickuser', function (req, res, next) {
+    if (!req.user) { var err = new Error('Edit access denied'); err.status = 401; return next(err); }
+    var flick = new Flick();
+    flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
+        if (err) { err.code = err.code || 'F03028'; return next(err); }
+        if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
+            flickUser.get(flick.id, function (err, psudoUsers) {
+                if (err) { err.code = err.code || 'F03029'; return next(err); }
+                res.send({data: psudoUsers});
+            });
+        } else {
+            err = new Error('Edit access denied'); err.status = 401; return next(err);
+        }
+    }); 
+});
+
 /** PUT grant a specified username or email address access
 * 
 */
@@ -483,7 +504,7 @@ router.put('/flickuser', function (req, res, next) {
         flick.load(req.body.id, req.user.id, req.user.isSysAdmin, function (err, flickf) {
             if (err) { err.code = err.code || 'F03022'; return next(err); }
             if ((flick.userId === req.user.id || req.user.isSysAdmin) && req.user.id !== undefined) {/// user is logged in and has permissions or is admin.
-                flickUser.add(flick.id, user.id, function (err) {
+                flickUser.add(flick.id, user.id, req.body.searchTerm, function (err) {
                     if (err) { err.code = err.code || 'F03023'; return next(err); }
                     res.send({All: 'OK'});
                 });

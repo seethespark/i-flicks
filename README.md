@@ -12,7 +12,7 @@ i-flicks pulls together several components to give a full, open source video sha
 
 i-flicks is intended for small teams or individuals who want a stand alone video presentation system.  It will work with a few hundred or low thousands of videos and a handful of concurrent viewers.  i-flicks originated from a desire to share family videos hosted on a home server and I couldn't find a fully featured Node implementation.
 
-As of the time of writing this, i-flicks is still in active developmnent and isn't following Semantic Versioning yet.  APIs may change.  Database changes should be additive and so new versions won't overwrite your existing videos (unless your uploads directory is inside your node_modules folder!).
+As of the time of writing this, i-flicks is still in active developmnent and the version number reflects API changes (semantic versioning), not production stability.  Database changes should be additive between versions and so new versions won't overwrite your existing videos unless you switch between SQL Server and NEDB or your uploads directory is inside your node_modules folder!).
 
 If you are interested in a larger installation or new features please get in touch as that's the best way to make it happen.  
 
