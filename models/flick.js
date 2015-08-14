@@ -249,7 +249,9 @@ var Flick = function (id, user, callback) {
             description: flick.description,
             fileDetail: flick.fileDetail,
             tags: flick.tags,
-            playCount: flick.playCount
+            playCount: flick.playCount,
+            isPublic: flick.isPublic,
+            allowDirectLink: flick.allowDirectLink
         }; },
 
         addUser: addUser,
