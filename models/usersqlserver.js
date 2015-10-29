@@ -12,6 +12,7 @@ var nodemailer = require('nodemailer');
 var mg = require('nodemailer-mailgun-transport');
 var logger = require('../lib/logger');
 var StatsD = require('statsd-client');
+var url = require('url');
 
 var statsD = StatsD.globalStatsD;
 
@@ -62,7 +63,7 @@ function random(howMany, chars) {
  */
 function sendConformationEmail(userId, emailAddress) {
     var sql, request, htmlBody, validationUrl, mailOptions, rand = random(10);
-    validationUrl =  global.iflicks_settings.baseURL + '/userconfirm/' + userId + '/' + rand;
+    validationUrl =  url.resolve(global.iflicks_settings.baseURL, 'userconfirm/' + userId + '/' + rand);
     htmlBody = '<p><b>i-flicks account created</b></p><p>Please click the following link or copy it into your browser\'s address bar to confirm your email address.</p>' +
         '<a href="' + validationUrl + '">' + validationUrl + '</a>';
     // setup e-mail data with unicode symbols
