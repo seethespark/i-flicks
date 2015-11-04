@@ -633,6 +633,7 @@ window.iflicks = (function iflicks(settings) {
         }
 
         function setFlickDetail() {
+            console.log(currentFlickDetail);
             if (currentFlickDetail.fileDetail && currentFlickDetail.fileDetail.width) {
                 flkDims = getViewerDimensions(currentFlickDetail.fileDetail.width, currentFlickDetail.fileDetail.height);
             } else {
@@ -731,7 +732,9 @@ window.iflicks = (function iflicks(settings) {
             vidDetailElement.className = 'flickTextItem';
             vidDetailElement.textContent = 'Played ' + (currentFlickDetail.playCount || 0) + ' time' + (currentFlickDetail.playCount === 1 ? '' : 's');
             flickText.appendChild(vidDetailElement);
-
+console.log(user.id);
+console.log(currentFlickDetail);
+console.log(user.isSysAdmin);
             if (user.id !== undefined && (currentFlickDetail.userId === user.id || user.isSysAdmin === true)) {
                 flickText.appendChild(btnEdit());
                 flickText.appendChild(btnShowPermissions());

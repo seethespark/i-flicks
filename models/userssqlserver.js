@@ -57,9 +57,9 @@ function listAllSearch(limit, search, callback) {
 
     request = new mssql.Request(mssql.globalConnection);
     request.query(sql, function (err, recordset) {
-        if (statsD) {
+        /*if (statsD) {
             statsD.timing('users.listAllSearch', dbStartTime);
-        }
+        }*/
 
         if (err) { err.code = 'F06704'; callback(err, undefined); return; }
         if (recordset.length === 0) {
