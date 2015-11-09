@@ -115,7 +115,7 @@ function list(page, limit, userId, isSysAdmin, callback) {
     rowUpper = (page + 1) * limit;
 
     sql = 'SELECT COUNT(*) as count FROM flick f' +
-        ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 ' +
+        ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 AND fu.userId = @userId ' +
         ' WHERE f.isDeleted = 0 AND f.isEncoded = 1 ';
         if (isSysAdmin !== true) {
           sql += ' AND (f.isPublic = 1 ' +
@@ -130,7 +130,7 @@ function list(page, limit, userId, isSysAdmin, callback) {
       sql = 'SELECT * ' +
         'FROM ( SELECT ROW_NUMBER() OVER ( ORDER BY f.dateEntered ) AS RowNum, f.* ' +
         'FROM flick f ' +
-        ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 ' +
+        ' LEFT JOIN flickUser fu ON fu.flickId = f.id AND fu.isGrantedAccess = 1 AND fu.userId = @userId ' +
         ' WHERE f.isDeleted = 0 AND f.isEncoded = 1 ';
         if (isSysAdmin !== true) {
           sql += ' AND (f.isPublic = 1 ' +
