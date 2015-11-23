@@ -12,7 +12,11 @@ var session = require('express-session');
 var NedbSession = require('connect-nedb-session-two')(session);
 var StatsD = require('statsd-client');
 
-global.iflicks_settings = require('./settings');
+try {
+    global.iflicks_settings = require('./settings');
+} catch (err) {
+    global.iflicks_settings = {};
+}
 
 
 /** Main application entry point
