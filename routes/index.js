@@ -132,7 +132,7 @@ router.get('/flickdetail/:id', function (req, res, next) {
 * 
 */
 router.get('/thumb/:id/:fileName', function (req, res, next) {
-    var userId, isSysAdmin, flick;
+    var userId, isSysAdmin, flick, filePath;
     if (req.user) {
         userId = req.user.id;
         isSysAdmin = req.user.isSysAdmin;
@@ -142,11 +142,22 @@ router.get('/thumb/:id/:fileName', function (req, res, next) {
         if (err) { return next(err); }
         if (flick.thumbnailPath === undefined || flick.thumbnailPath.indexOf('null') > -1) { err = new Error('Image missing (404)'); err.status = 404; return next(err); }
         setHeaders(res);
-        res.sendFile(flick.thumbnailPath, {}, function (err) {
-            if (err) {
-                err.code = err.code || 'F03003';
-                return next(err);
+        /// If fileName is requested then get the path to that otherwise send the default.
+        if (req.params.fileName !== undefined) {
+            filePath = path.join(flick.thumbnailPath.substring(0, (flick.thumbnailPath.lastIndexOf('/') + 1)), req.params.fileName + path.extname(flick.thumbnailPath));
+        } else {
+            filePath = flick.thumbnailPath;
+        }
+        fs.stat(filePath, function(err) {
+            if (err) { /// if err then assume file doesn't exist.
+                filePath = flick.thumbnailPath;
             }
+            res.sendFile(filePath, {}, function (err) {
+                if (err) {
+                    err.code = err.code || 'F03003';
+                    return next(err);
+                }
+            });
         });
     });
 });
@@ -628,11 +639,13 @@ router.get('/:vidName/:vid', function (req, res, next) {
     flick.load(req.params.vid, userId, isSysAdmin, function (err) {
         if (err) { err.code = err.code || 'F03014'; console.log(err); return next(err); }
         var js = 'js/index.js', 
-            showCookieBanner = true,  
+            showCookieBanner = true,
             css = global.iflicks_settings.css;
         if (global.iflicks_settings.env === 'production') {
             css = css.replace('.css', '.min.css');
             js = js.replace('.js', '.min.js');
+        } else {
+            css = 'index.css';
         }
         /// Check the cookie consent cookie.  If this is ommitted the client will still check but the banner flashes on page load.
         if (utils.getCookie(req.headers.cookie, 'cookieConsent') === 'true') {
