@@ -441,14 +441,14 @@ input[type="button"] {
 	#logo {
 		display: none;
 	}
-	#loginContainer input[type="text"] {
+	#signinContainer input[type="text"] {
 		width: 60px;
 		height: 10px;
 	}
-	#loginContainer input[type="button"] {
+	#signinContainer input[type="button"] {
 		margin: 2px;
 	}
-	#loginTextInputs {
+	#signinTextInputs {
 		display: block;
 	}
 	.vidContainer {

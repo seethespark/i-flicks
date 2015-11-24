@@ -13,16 +13,16 @@
 		<input type="text" id="search" name="search" placeholder="Search...">
 		<input type="button" id="submitSearch" value="Search" class="button">
 		<span id="loggedinContainer">
-			<input type="button" id="submitLogout" value="Logout" class="button">
+			<input type="button" id="submitSignout" value="Sign out" class="button">
 			<input type="button" id="showUploadContainer" value="Upload" class="button">
 			<input type="button" id="showUnencodedFlickList" value="Unencoded" class="button">
 		</span>
-		<span id="loginContainer">
-			<span id="loginTextInputs">
-				<label for="fileName">Username: </label><input type="text" id="username" name="username" placeholder="Username">
-				<label for="fileName">Password: </label><input type="text" id="password" class="" placeholder="Password">
+		<span id="signinContainer">
+			<span id="signinTextInputs">
+				<label for="fileName">Username: </label><input type="text" id="username" name="username" placeholder="Username" autocomplete="username">
+				<label for="fileName">Password: </label><input type="password" id="password" class="" name="password" placeholder="Password" autocomplete="current-password">
 			</span>
-			<input type="button" id="submitLogin" value="Logon" class="button">
+			<input type="button" id="submitSignin" value="Sign in" class="button">
 			{{#if usersCanCreateAccount }}
 			<input type="button" id="showCreateAccount" value="Create account" class="button">
 			{{/if}}
@@ -63,7 +63,7 @@
 	{{#if usersCanCreateAccount }}
 	<div id="createAccountContainer" class="hide">
 		<form id="createAccountForm">
-			<label for="username">Username:</label><input type="text" id="createUsername" name="username" class="createAccountContainer" placeholder="Username" autocomplete="username">
+			<label for="username">Username:</label><input type="text" id="createUsername" name="username" class="createAccountContainer" placeholder="Username" >
 			<br>
 			<label for="createGivenname">Given Name:</label><input type="text" id="createGivenname" name="givenName"  class="createAccountContainer" placeholder="First name" autocomplete="given-name">
 			<br>
@@ -71,7 +71,7 @@
 			<br>
 			<label for="createEmail">Email:</label><input type="text" id="createEmail" name="emailAddress"  class="createAccountContainer" placeholder="Email address" autocomplete="email">
 			<br>
-			<label for="createPassword">Password:</label><input type="text" id="createPassword" name="password"  class="createAccountContainer" placeholder="Password">
+			<label for="createPassword">Password:</label><input type="password" id="createPassword" name="createPassword" class="createAccountContainer" placeholder="Password" autocomplete="new-password">
 			<br>
 
 			<input type="button" id="submitCreateAccount" value="Create" class="button">

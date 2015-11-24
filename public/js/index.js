@@ -138,9 +138,15 @@ window.iflicks = (function iflicks(settings) {
     }
 
     function show(el) {
+        if (typeof el === 'string') {
+            el = document.getElementById(el);
+        }
         el.classList.remove('hide');
     }
     function hide(el) {
+        if (typeof el === 'string') {
+            el = document.getElementById(el);
+        }
         el.classList.add('hide');
     }
 
@@ -156,9 +162,9 @@ window.iflicks = (function iflicks(settings) {
     }
     /// Show the upload form
     function showHideElement(elementName, height) {
-        height = height || '200px';
+        height = (height === undefined ? '200px' : height);
         var el = document.getElementById(elementName);
-        if (el.style.height === '0px' || el.style.height === '') {
+        if ((el.style.height === '0px' || el.style.height === '') && height !== 0 && height !== '0px') {
             el.style.height = height;
             el.style.opacity = 1;
             walkTheDom(el, function(el) { if (el.style) {el.style.opacity = 1;} });
@@ -1132,7 +1138,7 @@ window.iflicks = (function iflicks(settings) {
                     showMessage(json.error, 'addUserHandler.fetchUser', 6);
                 } else if (json.reply) {
                     showMessage(json.reply, 'addUserHandler.fetchUser1', 7);
-                    showHideElement('createAccountContainer');
+                    showHideElement('createAccountContainer', 0);
                     document.getElementById('username').value = newUser.username;
                 } else {
                     showMessage('Unexpected response', 'addUserHandler.fetchUser2', 10);
@@ -1188,16 +1194,17 @@ window.iflicks = (function iflicks(settings) {
         document.getElementById('infoContainer').className = 'hide';
         setCookie('closeInfoPanel', 'true', 365);
     }
-    /// Login
-    function postLogin() {
+    /// signin
+    function postSignin() {
         if (Object.getOwnPropertyNames(user).length > 0) {
             if (!user.options) { user.options = {}; }
             if (user.options.volume && vjs) {
                 vjs.volume(user.options.volume);
             }
 
+            showHideElement('createAccountContainer', 0);
             document.getElementById('loggedinContainer').style.display = 'inline-block';
-            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('signinContainer').style.display = 'none';
             document.getElementById('headerBarUserName').textContent  = 'Hello ' + user.givenName;
             if (user.gravatarUrl) {
                 document.getElementById('headerBarAvatar').src  = user.gravatarUrl;
@@ -1215,8 +1222,8 @@ window.iflicks = (function iflicks(settings) {
             
         }
     }
-    function login() {
-        window.fetch('/login', {
+    function signin() {
+        window.fetch('/signin', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1234,19 +1241,19 @@ window.iflicks = (function iflicks(settings) {
             })
             .then(function (json) {
                 if (json.error) {
-                    showMessage(json.error, 'login.fetchLogin', 7);
+                    showMessage(json.error, 'signin.fetchSignin', 7);
                 } else {
                     //(Object.getOwnPropertyNames(json).length > 0) {
                     user = json;
-                    postLogin();
+                    postSignin();
                 }
             })
             .catch(function (ex) {
-                showMessage(ex, 'login.fetchLogin1',  6);
+                showMessage(ex, 'signin.fetchSignin1',  6);
             });
     }
-    function loginCheck() {
-        window.fetch('/login', {
+    function signinCheck() {
+        window.fetch('/signin', {
             method: 'GET',
             credentials: 'include', // or same-origin
             headers: {
@@ -1261,24 +1268,24 @@ window.iflicks = (function iflicks(settings) {
             .then(function (json) {
                 if (Object.getOwnPropertyNames(json).length > 0) {
                     user = json;
-                    postLogin();
+                    postSignin();
                 }
             })
             .catch(function (ex) {
-                showMessage(ex, 'loginCheck.fetchLogin',  6);
+                showMessage(ex, 'signinCheck.fetchsignin',  6);
                 //document.getElementById('message').textContent = ex;
             });
     }
 
-    function logout() {
+    function signout() {
         user = {};
         document.getElementById('loggedinContainer').style.display = 'none';
-        document.getElementById('loginContainer').style.display = 'inline-block';
+        document.getElementById('signinContainer').style.display = 'inline-block';
         document.getElementById('showUploadContainer').style.display = 'inline-block';
         document.getElementById('message').textContent  = '';
         document.getElementById('headerBarUserName').textContent  = '';
 
-        window.fetch('/login', {
+        window.fetch('/signin', {
             method: 'DELETE',
             credentials: 'include',
             headers: {
@@ -1287,7 +1294,7 @@ window.iflicks = (function iflicks(settings) {
             }
         })
             .catch(function (ex) {
-                showMessage(ex, 'logout.fetchLogin',  6);
+                showMessage(ex, 'signout.fetchsignin',  6);
             });
     }
 
@@ -1345,8 +1352,8 @@ window.iflicks = (function iflicks(settings) {
     function start() {
         checkFeatures(function () {
             addListener('submitUploadNewFlick', 'click', true, uploadFile);
-            addListener('submitLogin', 'click', true, login);
-            addListener('submitLogout', 'click', true, logout);
+            addListener('submitSignin', 'click', true, signin);
+            addListener('submitSignout', 'click', true, signout);
             addListener('submitSearch', 'click', true, searchSubmit);
             addListener('search', 'keydown', false, function (ev) {
                 if (!ev) { ev = window.event; }
@@ -1402,7 +1409,7 @@ window.iflicks = (function iflicks(settings) {
                     }
                 }
             });
-            loginCheck();
+            signinCheck();
             watchForNewFlicks();
             listFlicks(0, settings.flickListPageLength);
             // no need for testing.  

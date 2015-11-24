@@ -161,7 +161,7 @@ module.exports = function ret(sett) {
             global.iflicks_settings.runOnce = false;
         }
     }
-    app.use('/login', security);
+    app.use('/signin', security);
     app.use('/script', script);
     app.use('/toolbox', security.ensureAuthenticated, toolbox);
     app.use('/api/*', security.basicAuth);
