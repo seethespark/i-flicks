@@ -2,4 +2,4 @@
 /* In dev mode it's easiest to use this file to combine style sheets.  
 In production the Grunt generated minified files should be used. */
 @import 'layout.css';
-@import 'white.css'
+@import 'white.css';

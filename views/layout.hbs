@@ -11,28 +11,28 @@
     <link href="/css/{{css}}" rel="stylesheet">
   </head>
   <body id="body">
-  {{#if showCookieBanner}}
-  <div id="cookieBanner">We use cookies.  If you don't like cookies (the electronic kind) please don't continue.  If you are happy to continue please <input type="button" id="submitCookieAccept" value="Accept and continue" />. <a href="privacy">More info</a>
-  </div>
-  {{/if}}  
-    {{{body}}}
-  <div id="footer">
-    <div id="footer1" class="footer">
-      © 2015 See The Spark. <a href="https://www.seethespark.com"><img src="/img/sts_logo_32x30.png" alt="See The Spark logo" width=32 height=30 id="stsLogo"></a>
+    {{#if showCookieBanner}}
+    <div id="cookieBanner">We use cookies.  If you don't like cookies (the electronic kind) please don't continue.  If you are happy to continue please <input type="button" id="submitCookieAccept" value="Accept and continue" />. <a href="privacy">More info</a>
     </div>
-    <div id="footer2" class="footer">
-      <a href="https://github.com/seethespark/i-flicks">
-        <img id="github" src="/img/GitHub-Mark-Light-32px.png" alt="link to GitHub" width=32 height=30>
-      </a>
-    </div>
+    {{/if}}  
+      {{{body}}}
+    <div id="footer">
+      <div id="footer1" class="footer">
+        © 2015 See The Spark. <a href="https://www.seethespark.com" title="link to See The Spark website"><img src="/img/sts_logo_32x30.png" alt="See The Spark logo" width=32 height=30 id="stsLogo"></a>
+      </div>
+      <div id="footer2" class="footer">
+        <a href="https://github.com/seethespark/i-flicks">
+         <i class="fa fa-github fa-2x" title="link to GitHub"></i>
+        </a>
+      </div>
 
-    <div id="footer3" class="footer">
-      <a href="https://twitter.com/i_flicks" class="twitter-follow-button" data-show-count="false">Follow @i_flicks</a>
-      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
-    </div>
+      <div id="footer3" class="footer">
+        <a href="https://twitter.com/i_flicks" class="twitter-follow-button" data-show-count="false">Follow @i_flicks</a>
+        <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+      </div>
 
-    <div id="footer4" class="footer"><a href="/readme" title="More about i-flicks">About</a>&nbsp;{{version}}</div>
-  </div>
+      <div id="footer4" class="footer"><a href="/readme" title="More about i-flicks">About</a>&nbsp;{{version}}</div>
+    </div>
   <noscript>
     This page needs JavaScript in order to list and display videos.  Please enable JavaScript to use i-flicks.
   </noscript>
