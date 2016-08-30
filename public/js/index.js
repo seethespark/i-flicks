@@ -1118,6 +1118,12 @@ window.iflicks = (function iflicks(settings) {
                 }
             } else if (el.type === 'checkbox') {
                 newUser[el.name] = el.checked;
+            } else if (el.type === 'password') {
+                newUser.password = el.value;
+                if (el.value.length < 6) {
+                    readyToSend = false;
+                    showMessage('Password must me 6 characters or more.', 'addUserHandler', 5);
+                }
             }
         }
         if (!readyToSend) { return; }

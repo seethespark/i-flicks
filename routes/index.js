@@ -386,6 +386,7 @@ router.put('/user', function (req, res, next) {
             return next(err);
         }
         if (req.body.username.length === 0 ||
+            req.body.password === undefined ||
             req.body.password.length === 0 ||
             req.body.givenName.length === 0 ||
             req.body.familyName.length === 0 ||

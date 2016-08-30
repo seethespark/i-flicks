@@ -3,6 +3,15 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 var path = require('path');
+var node_modules;
+
+/// If this is used as straight code teh node modules are in the node_modules folder if it's a module itself the nthey are i nthe same directory.' 
+try {
+    fs.statSync(path.join(__dirname, '../node_modules'));
+    node_modules = '../node_modules';
+} catch (ex) {
+    node_modules = '../../';
+}
 
 function setHeaders(res, contentType) {
     var seconds = 14 * 24 * 3600;// 4 days
@@ -17,63 +26,63 @@ function setHeaders(res, contentType) {
 router.get('/video.js', function (req, res, next) {
 	if (global.iflicks_settings.env === 'production') {
         setHeaders(res, 'text/javascript');
-		res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/video.js'));
+		res.sendFile(path.join(__dirname, node_modules , 'video.js/dist/video-js/video.js'));
 	} else {
-        res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/video.dev.js'));
+        res.sendFile(path.join(__dirname, node_modules , 'video.js/dist/video-js/video.dev.js'));
 	}
 });
 router.get('/video-js.css', function (req, res, next) {
     if (global.iflicks_settings.env === 'production') {
         setHeaders(res, 'text/css');
-        res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/video-js.min.css'));
+        res.sendFile(path.join(__dirname, node_modules, 'video.js/dist/video-js/video-js.min.css'));
     } else {
-        res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/video-js.css'));
+        res.sendFile(path.join(__dirname, node_modules , 'video.js/dist/video-js/video-js.css'));
     }
 });
 router.get('/font/:font', function (req, res, next) {
     setHeaders(res, 'text/css');
-    res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/font/' + req.params.font));
+    res.sendFile(path.join(__dirname, node_modules , 'video.js/dist/video-js/font/' + req.params.font));
 });
 
 router.get('/video-js.swf', function (req, res, next) {
-    res.sendFile(path.join(__dirname, '../node_modules/video.js/dist/video-js/video-js.swf'));
+    res.sendFile(path.join(__dirname, node_modules , 'video.js/dist/video-js/video-js.swf'));
 });
 router.get('/promise.js', function (req, res, next) {
 	if (global.iflicks_settings.env === 'production') {
         setHeaders(res, 'text/javascript');
-		res.sendFile(path.join(__dirname, '../node_modules/es6-promise/dist/es6-promise.min.js'));
+		res.sendFile(path.join(__dirname, node_modules , 'es6-promise/dist/es6-promise.min.js'));
 	} else {
-		res.sendFile(path.join(__dirname, '../node_modules/es6-promise/dist/es6-promise.js'));
+		res.sendFile(path.join(__dirname, node_modules , 'es6-promise/dist/es6-promise.js'));
 	}
 });
 router.get('/history.js', function (req, res, next) {
     if (global.iflicks_settings.env === 'production') {
         setHeaders(res, 'text/javascript');
-        res.sendFile(path.join(__dirname, '../node_modules/html5-history-api/history.min.js'));
+        res.sendFile(path.join(__dirname, node_modules , 'html5-history-api/history.min.js'));
     } else {
-        res.sendFile(path.join(__dirname, '../node_modules/html5-history-api/history.js'));
+        res.sendFile(path.join(__dirname, node_modules , 'html5-history-api/history.js'));
     }
 });
 router.get('/fetch.js', function (req, res, next) {
     setHeaders(res, 'text/javascript');
-    res.sendFile(path.join(__dirname, '../node_modules/fetch-polyfill/fetch.js'));
+    res.sendFile(path.join(__dirname, node_modules , 'fetch-polyfill/fetch.js'));
     
 });
 router.get('/classlist.js', function (req, res, next) {
     setHeaders(res, 'text/javascript');
-    res.sendFile(path.join(__dirname, '../node_modules/classlist-polyfill/src/index.js'));
+    res.sendFile(path.join(__dirname, node_modules , 'classlist-polyfill/src/index.js'));
 });
 /*if (global.iflicks_settings.env === 'production') {
-        app.use('/promise.js', express.static(path.join(__dirname, 'node_modules/promise-polyfill/Promise.min.js')));
-        app.use('/video.js', express.static(path.join(__dirname, 'node_modules/video.js/dist/video-js/video.js')));
+        app.use('/promise.js', express.static(path.join(__dirname, '../promise-polyfill/Promise.min.js')));
+        app.use('/video.js', express.static(path.join(__dirname, '../video.js/dist/video-js/video.js')));
         app.use(morgan('common'));
     } else {
-        app.use('/promise.js', express.static(path.join(__dirname, 'node_modules/promise-polyfill/Promise.js')));
-        app.use('/video.js', express.static(path.join(__dirname, 'node_modules/video.js/dist/video-js/video.dev.js')));
+        app.use('/promise.js', express.static(path.join(__dirname, '../promise-polyfill/Promise.js')));
+        app.use('/video.js', express.static(path.join(__dirname, '../video.js/dist/video-js/video.dev.js')));
         app.use(morgan('dev'));
     }
-    app.use('/fetch.js', express.static(path.join(__dirname, 'node_modules/whatwg-fetch/fetch.js')));
-    app.use('/video-js.swf', express.static(path.join(__dirname, 'node_modules/video.js/dist/video-js/video-js.swf')));
+    app.use('/fetch.js', express.static(path.join(__dirname, '../whatwg-fetch/fetch.js')));
+    app.use('/video-js.swf', express.static(path.join(__dirname, '../video.js/dist/video-js/video-js.swf')));
     
 */
 

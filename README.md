@@ -30,18 +30,18 @@ Getting started
 Create a Node app and pass the i-flicks object to the HTTP server then start the app.
 
 	var settings = {
-	    ffmpegPath: '/usr/bin/ffmpeg',
-	    ffprobePath:  '/usr/bin/ffprobe',
-	    flvMetaPath:  '/usr/bin/flvmeta',
-	    uploadPath: '/var/uploads/i-flicks',
-  		mediaPath: '/var/uploads/i-flicks',
-	    sessionSecret: 'my secret',
-	    baseURL: 'http://localhost:3000',
-  		databaseType: 'nedb',
-
+    ffmpegPath: '/usr/bin/ffmpeg',
+    ffprobePath:  '/usr/bin/ffprobe',
+    flvMetaPath:  '/usr/bin/flvmeta',
+    uploadPath: '/var/uploads/i-flicks',
+		mediaPath: '/var/uploads/i-flicks',
+    sessionSecret: 'my secret',
+    baseURL: 'http://localhost:3000/',
+		databaseType: 'nedb',
+		usersCanCreateAccount = true
 	 };
 	var http = require('http');
-	var server = http.createServer(require('./i-flicks/app')(settings));
+	var server = http.createServer(require('i-flicks')(settings));
 
 	server.listen(3000, function() {
 		var addr = this.address();

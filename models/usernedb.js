@@ -72,14 +72,19 @@ function sendConformationEmail(userId, emailAddress) {
         //text: body, //, // plaintext body
         html: htmlBody
     };
-    // send mail with defined transport object
-    nodemailerTransport.sendMail(mailOptions, function (err, info) {
-        // console.log(info);
-        if (err) {
-            logger.errorNoReq('utils.sendUploadEmail.sendMail', 'F06016', err, 2);
-        }
-        nedb.globalDb.user.update({_id: userId}, { $set: { emailConfirmationKey: rand } }, function () {});
-    });
+    if (nodemailerTransport) {
+        // send mail with defined transport object
+        nodemailerTransport.sendMail(mailOptions, function (err, info) {
+            // console.log(info);
+            if (err) {
+                logger.errorNoReq('utils.sendUploadEmail.sendMail', 'F06016', err, 2);
+            }
+            nedb.globalDb.user.update({_id: userId}, { $set: { emailConfirmationKey: rand } }, function () {});
+        });
+    } else {
+        //// If no email transport then don't require email confirmation' 
+        nedb.globalDb.user.update({_id: userId}, { $set: {  emailConfirmationKey:  undefined, isConfirmed: true, dateUpdated: new Date() } }, function () {});
+    }
 }
 
 /**

@@ -1,9 +1,9 @@
 {
   "name": "i-flicks",
-  "homepage": "https://github.com/seethespark/i-flicks",
+  "homepage": "https://seethespark.com/l/uoi9w1",
   "author": "Nick Whiteley",
   "description": "Video sharing website and application",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "private": false,
   "scripts": {
     "start": "nodemon ./bin/www"
@@ -65,9 +65,6 @@
     "grunt-mocha-test": "^0.12.2",
     "mocha": "2.0.1",
     "supertest": "~0.14.0"
-  },
-  "publishConfig": {
-    "registry": "http://192.168.0.26:4873/"
   },
   "repository": {
     "type": "git",
