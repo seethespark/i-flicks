@@ -3,7 +3,7 @@
   "homepage": "https://seethespark.com/l/uoi9w1",
   "author": "Nick Whiteley",
   "description": "Video sharing website and application",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "scripts": {
     "start": "nodemon ./bin/www"
