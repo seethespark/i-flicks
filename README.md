@@ -38,7 +38,7 @@ Create a Node app and pass the i-flicks object to the HTTP server then start the
     sessionSecret: 'my secret',
     baseURL: 'http://localhost:3000/',
 		databaseType: 'nedb',
-		usersCanCreateAccount = true
+		usersCanCreateAccount: true
 	 };
 	var http = require('http');
 	var server = http.createServer(require('i-flicks')(settings));
